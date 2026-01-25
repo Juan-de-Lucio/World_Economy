@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h2 {
+            color: #333;
+        }
+        ul {
+            list-style-type: square;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        .question {
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Balance of Payments Interactive Exercise</h2>
+        <p>Classify each transaction into the correct section of the Balance of Payments (BOP) and whether it represents Income, Payments, Asset +, Asset -, Liabilities +, or Liabilities -.</p>
+        
+        <div id="questions"></div>
+        <button onclick="loadQuestions()">Change Transactions</button>
+        <button onclick="checkAnswers()">Submit Answers</button>
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        const transactions = [
+            {text: "Exports of goods ($500 million)", answer: "Current Account", type: "Income"},
+            {text: "Imports of goods ($600 million)", answer: "Current Account", type: "Payments"},
+            {text: "Foreign direct investment into Econoland ($300 million)", answer: "Financial Account", type: "Liabilities +"},
+            {text: "Remittances received from abroad ($200 million)", answer: "Current Account", type: "Income"},
+            {text: "Government borrowing from foreign sources ($400 million)", answer: "Financial Account", type: "Liabilities +"},
+            {text: "Dividends paid to foreign investors ($150 million)", answer: "Primary Income", type: "Payments"},
+            {text: "Interest earned on foreign assets ($100 million)", answer: "Primary Income", type: "Income"},
+            {text: "Foreign aid received ($250 million)", answer: "Secondary Income", type: "Income"},
+            {text: "Capital transfers received ($180 million)", answer: "Capital Account", type: "Income"},
+            {text: "Purchase of foreign bonds by domestic residents ($350 million)", answer: "Portfolio Investment", type: "Asset +"}
+        ];
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        function loadQuestions() {
+            shuffleArray(transactions);
+            let questionsHtml = '';
+            for (let i = 0; i < 3; i++) {
+                questionsHtml += `
+                    <div class="question">
+                        <label>${transactions[i].text}</label><br>
+                        <select id="q${i}">
+                            <option value="">Select BOP Section</option>
+                            <option value="Current Account">Current Account</option>
+                            <option value="Capital Account">Capital Account</option>
+                            <option value="Financial Account">Financial Account</option>
+                            <option value="Primary Income">Primary Income</option>
+                            <option value="Secondary Income">Secondary Income</option>
+                            <option value="Portfolio Investment">Portfolio Investment</option>
+                        </select>
+                        <select id="q${i}_type">
+                            <option value="">Select Type</option>
+                            <option value="Income">Income</option>
+                            <option value="Payments">Payments</option>
+                            <option value="Asset +">Asset +</option>
+                            <option value="Asset -">Asset -</option>
+                            <option value="Liabilities +">Liabilities +</option>
+                            <option value="Liabilities -">Liabilities -</option>
+                        </select>
+                    </div>
+                `;
+            }
+            document.getElementById("questions").innerHTML = questionsHtml;
+        }
+        
+        function checkAnswers() {
+            let score = 0;
+            let total = 3;
+            
+            for (let i = 0; i < total; i++) {
+                let selectedSection = document.getElementById(`q${i}`).value;
+                let selectedType = document.getElementById(`q${i}_type`).value;
+                if (selectedSection === transactions[i].answer && selectedType === transactions[i].type) {
+                    score++;
+                }
+            }
+            
+            document.getElementById("result").innerText = `You got ${score} out of ${total} correct!`;
+        }
+        
+        window.onload = loadQuestions;
+    </script>
+</body>
+</html>

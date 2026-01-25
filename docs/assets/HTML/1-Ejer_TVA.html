@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Value Added in Bread Production</title>
+    <script>
+        function getRandomValue(base, range) {
+            return (base + (Math.random() * range - range / 2)).toFixed(2);
+        }
+
+        function calculateValues() {
+            let wheatCost = 0.00; // Set cost of wheat farming to 0
+            let valueAddedWheat = parseFloat(getRandomValue(1.50, 0.50));
+            let wheatRevenue = wheatCost + valueAddedWheat;
+
+            let flourCost = wheatRevenue;
+            let valueAddedFlour = parseFloat(getRandomValue(2.50, 0.50));
+            let flourRevenue = flourCost + valueAddedFlour;
+
+            let breadCost = flourRevenue;
+            let valueAddedBread = parseFloat(getRandomValue(3.50, 0.50));
+            let breadRevenue = breadCost + valueAddedBread;
+
+            let totalValueAdded = valueAddedWheat + valueAddedFlour + valueAddedBread;
+
+            document.getElementById("wheatRevenue").innerText = "$" + wheatRevenue.toFixed(2);
+            document.getElementById("wheatCost").innerText = "$" + wheatCost.toFixed(2);
+            document.getElementById("valueAddedWheat").innerText = "$" + valueAddedWheat.toFixed(2);
+
+            document.getElementById("flourRevenue").innerText = "$" + flourRevenue.toFixed(2);
+            document.getElementById("flourCost").innerText = "$" + flourCost.toFixed(2);
+            document.getElementById("valueAddedFlour").innerText = "$" + valueAddedFlour.toFixed(2);
+
+            document.getElementById("breadRevenue").innerText = "$" + breadRevenue.toFixed(2);
+            document.getElementById("breadCost").innerText = "$" + breadCost.toFixed(2);
+            document.getElementById("valueAddedBread").innerText = "$" + valueAddedBread.toFixed(2);
+
+            document.getElementById("totalValueAdded").innerText = "$" + totalValueAdded.toFixed(2);
+        }
+    </script>
+</head>
+<body>
+    <h2>Value Added in Bread Production</h2>
+    <p><strong>Stages of Production (Randomized each time):</strong></p>
+    <ul>
+        <li>Wheat Farming: Revenue = <span id="wheatRevenue">$0.00</span>, Cost = <span id="wheatCost">$0.00</span>, Value Added: <span id="valueAddedWheat">$0.00</span></li>
+        <li>Flour Milling: Revenue = <span id="flourRevenue">$0.00</span>, Cost = <span id="flourCost">$0.00</span>, Value Added: <span id="valueAddedFlour">$0.00</span></li>
+        <li>Bread Baking: Revenue = <span id="breadRevenue">$0.00</span>, Cost = <span id="breadCost">$0.00</span>, Value Added: <span id="valueAddedBread">$0.00</span></li>
+    </ul>
+    <button onclick="calculateValues()">Calculate Value Added</button>
+    <h3>Total Value Added in the Economy: <span id="totalValueAdded">$0.00</span></h3>
+</body>
+</html>

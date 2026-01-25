@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MONIAC-like — Circular Flow (Valves + Sectoral Balances)</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --panel:rgba(255,255,255,.92);
+      --border:rgba(15,23,42,.12);
+      --shadow:0 12px 28px rgba(0,0,0,.08);
+      --blueInk:rgba(11,58,165,.95);
+      --ok: rgba(34, 197, 94, .18);
+      --warn: rgba(245, 158, 11, .16);
+      --bad: rgba(239, 68, 68, .14);
+    }
+
+    html, body { height:100%; margin:0; background:var(--bg); }
+    body{ font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,sans-serif; color:var(--ink); overflow:hidden; }
+    #app{ position:relative; width:100vw; height:100vh; }
+
+    canvas{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      display:block;
+      background:#fff;
+    }
+
+    /* Top HUD */
+    .hud{
+      position:absolute; top:12px; left:12px;
+      background:rgba(255,255,255,.90);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:10px 12px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(6px);
+      user-select:none;
+      max-width:min(860px, calc(100vw - 24px));
+    }
+    .hud .t{ font-weight:1000; letter-spacing:.2px; }
+    .hud .s{ font-size:12px; color:var(--muted); margin-top:2px; line-height:1.25; }
+    .pillrow{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center;}
+    .pill{
+      border:1px solid rgba(15,23,42,.12);
+      background:rgba(255,255,255,.90);
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:1000;
+      color:rgba(15,23,42,.78);
+      line-height:1;
+      white-space:nowrap;
+    }
+    .pill b{ color: var(--blueInk); }
+    .pill.state{ border-color: rgba(11,58,165,.15); }
+    .pill.ok{ background: var(--ok); }
+    .pill.warn{ background: var(--warn); }
+    .pill.bad{ background: var(--bad); }
+
+    /* Bottom dock */
+    .dock{
+      position:absolute; left:12px; right:12px; bottom:12px;
+      display:flex; justify-content:center;
+      pointer-events:none;
+    }
+    .dock-inner{
+      width:min(1220px, calc(100vw - 24px));
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:14px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(6px);
+      padding:10px;
+      pointer-events:auto;
+      user-select:none;
+    }
+    .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .spacer{ flex:1; }
+
+    .btn{
+      border:1px solid rgba(15,23,42,.14);
+      background:rgba(255,255,255,.95);
+      padding:7px 10px;
+      border-radius:12px;
+      font-weight:1000;
+      cursor:pointer;
+      color:rgba(15,23,42,.85);
+      font-size:12px;
+      line-height:1;
+      white-space:nowrap;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{ border-color: rgba(11,58,165,.22); background: rgba(210,232,255,.75); color: var(--blueInk); }
+    .btn.ghost{ background: rgba(255,255,255,.80); }
+    .btn.danger{ border-color: rgba(148,163,184,.45); background: rgba(241,245,249,.9); color: rgba(15,23,42,.8); }
+
+    details{ margin-top:8px; }
+    summary{
+      cursor:pointer;
+      list-style:none;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:rgba(15,23,42,.82);
+      font-weight:1000;
+      font-size:12px;
+      padding:6px 8px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(255,255,255,.85);
+      user-select:none;
+    }
+    summary::-webkit-details-marker{ display:none; }
+
+    .grid{
+      margin-top:8px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 860px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+    .block{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:12px;
+      padding:8px;
+      background:rgba(255,255,255,.88);
+    }
+    .block h4{
+      margin:0 0 6px;
+      font-size:12px;
+      font-weight:1000;
+      color:rgba(15,23,42,.78);
+      display:flex; justify-content:space-between; align-items:center;
+      gap:8px;
+    }
+    .controls-grid{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:6px 10px;
+      align-items:center;
+    }
+    label{ font-size:12px; color:rgba(15,23,42,.78); font-weight:1000; }
+    input[type="range"]{ width:100%; }
+    .val{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      color:rgba(15,23,42,.62);
+      font-weight:1000;
+      justify-self:end;
+      min-width:74px;
+      text-align:right;
+    }
+
+    .tog-wrap{ display:flex; flex-wrap:wrap; gap:8px; }
+    .tog{
+      display:flex; align-items:center; gap:8px;
+      padding:6px 8px;
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:12px;
+      background:rgba(255,255,255,.85);
+      font-size:12px;
+      font-weight:1000;
+      color:rgba(15,23,42,.75);
+      white-space:nowrap;
+    }
+    .tog input{ transform: translateY(1px); }
+  </style>
+</head>
+
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+
+  <div class="hud">
+    <div class="t">Circular Flow (MONIAC-style) — Valves + Sectoral balances</div>
+    <div class="s">Arrastra un “grifo” para abrir/cerrar un flujo. Arrastra en el canvas para inyectar dinero en el tanque más cercano. (C es residual: C=(1−s)(1−t)W)</div>
+    <div class="pillrow">
+      <div class="pill state" id="statePill">State: …</div>
+      <div class="pill" id="balPublic">T−G: …</div>
+      <div class="pill" id="balFin">S−I: …</div>
+      <div class="pill" id="balExt">M−X: …</div>
+      <div class="pill" id="balSum">(T−G)+(S−I)+(M−X): …</div>
+      <div class="pill"><b>Sign:</b> + green (surplus), − red (deficit)</div>
+    </div>
+  </div>
+
+  <div class="dock">
+    <div class="dock-inner" id="dock">
+      <div class="row">
+        <button class="btn" id="btnAcct">Accounting: ON</button>
+        <button class="btn" id="btnFade">Fade: ON</button>
+        <button class="btn" id="btnPause">Pause</button>
+        <button class="btn danger" id="btnReset">Reset</button>
+        <div class="spacer"></div>
+        <div class="pill" style="font-weight:900;">Shortcuts: <b>Space</b>=pause · <b>F</b>=fade · <b>A</b>=accounting · <b>C</b>=clear trails</div>
+      </div>
+
+      <details id="details">
+        <summary>Controls (sliders + flow switches) — click to open/close</summary>
+
+        <div class="grid">
+          <div class="block">
+            <h4>Valves (rates) <span style="font-weight:900;color:rgba(15,23,42,.55);font-size:12px;">per second</span></h4>
+            <div class="controls-grid" id="sliders"></div>
+          </div>
+
+          <div class="block">
+            <h4>Accounting mode <span style="font-weight:900;color:rgba(15,23,42,.55);font-size:12px;">≈0 band</span></h4>
+            <div class="controls-grid" id="acctControls">
+              <label>Zero band tolerance (units/s)</label>
+              <input type="range" id="tol" min="1" max="200" step="1" value="15" />
+              <div class="val" id="tolVal">15</div>
+            </div>
+
+            <div style="height:10px"></div>
+
+            <h4>Enable / disable flows</h4>
+            <div class="tog-wrap">
+              <label class="tog"><input type="checkbox" id="flowW" checked>Wages F→H (α)</label>
+              <label class="tog"><input type="checkbox" id="flowC" checked>Consumption H→F (residual)</label>
+              <label class="tog"><input type="checkbox" id="flowT" checked>Taxes H→G (t)</label>
+              <label class="tog"><input type="checkbox" id="flowS" checked>Saving H→Fin (s)</label>
+              <label class="tog"><input type="checkbox" id="flowI" checked>Investment Fin→F (i)</label>
+              <label class="tog"><input type="checkbox" id="flowG" checked>Gov spend G→F (g)</label>
+              <label class="tog"><input type="checkbox" id="flowM" checked>Imports F→RoW (m)</label>
+              <label class="tog"><input type="checkbox" id="flowX" checked>Exports RoW→F (x)</label>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- Canvas ----------
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  let W=0,H=0,dpr=1;
+
+  function resize(){
+    dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width  = Math.round(W*dpr);
+    canvas.height = Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', () => { resize(); layout(); });
+  resize();
+
+  // ---------- UI state ----------
+  let paused=false;
+  let fadeEnabled=true;
+  let accountingEnabled=true;
+
+  const btnPause = document.getElementById('btnPause');
+  const btnFade  = document.getElementById('btnFade');
+  const btnReset = document.getElementById('btnReset');
+  const btnAcct  = document.getElementById('btnAcct');
+
+  btnPause.addEventListener('click', () => {
+    paused = !paused;
+    btnPause.textContent = paused ? 'Resume' : 'Pause';
+  });
+
+  btnFade.addEventListener('click', () => {
+    fadeEnabled = !fadeEnabled;
+    btnFade.textContent = fadeEnabled ? 'Fade: ON' : 'Fade: OFF';
+    btnFade.classList.toggle('primary', fadeEnabled);
+  });
+
+  btnAcct.addEventListener('click', () => {
+    accountingEnabled = !accountingEnabled;
+    btnAcct.textContent = accountingEnabled ? 'Accounting: ON' : 'Accounting: OFF';
+    btnAcct.classList.toggle('primary', accountingEnabled);
+    if(!accountingEnabled){
+      setPillNeutral(document.getElementById('balPublic'), 'T−G: off');
+      setPillNeutral(document.getElementById('balFin'), 'S−I: off');
+      setPillNeutral(document.getElementById('balExt'), 'M−X: off');
+      setPillNeutral(document.getElementById('balSum'), 'Sum: off');
+    }
+  });
+
+  // ---------- Accounting tolerance (≈0 band) ----------
+  const tolSlider = document.getElementById('tol');
+  const tolVal = document.getElementById('tolVal');
+  let tol = parseFloat(tolSlider.value);
+  tolVal.textContent = tol.toFixed(0);
+  tolSlider.addEventListener('input', () => {
+    tol = parseFloat(tolSlider.value);
+    tolVal.textContent = tol.toFixed(0);
+  });
+
+  // ---------- Tanks ----------
+  const tanks = {
+    F:{ id:'F', name:'Firms',         stock:520, target:520, x:0,y:0,w:140,h:94 },
+    H:{ id:'H', name:'Households',    stock:520, target:520, x:0,y:0,w:140,h:94 },
+    G:{ id:'G', name:'Government',    stock:180, target:180, x:0,y:0,w:140,h:94 },
+    N:{ id:'N', name:'Finance',       stock:240, target:240, x:0,y:0,w:140,h:94 },
+    R:{ id:'R', name:'Rest of World', stock:240, target:240, x:0,y:0,w:140,h:94 },
+  };
+
+  function layout(){
+    const dock = document.getElementById('dock');
+    const dockRect = dock.getBoundingClientRect();
+    const usableH = Math.max(220, H - dockRect.height - 40);
+
+    const cx = W*0.52;
+    const cy = usableH*0.56;
+
+    tanks.F.x = cx - tanks.F.w/2; tanks.F.y = cy - tanks.F.h/2;
+    tanks.H.x = W*0.16;           tanks.H.y = cy - tanks.H.h/2;
+    tanks.R.x = W*0.80;           tanks.R.y = cy - tanks.R.h/2;
+
+    tanks.G.x = cx - tanks.G.w/2; tanks.G.y = usableH*0.16;
+    tanks.N.x = cx - tanks.N.w/2; tanks.N.y = usableH*0.92 - tanks.N.h;
+  }
+  layout();
+
+  // ---------- Parameters ----------
+  const params = {
+    speed: 1.0,
+    wageProp: 0.22,     // α
+    taxRate: 0.18,      // t
+    saveRate: 0.12,     // s
+    govSpendRate: 0.25, // g
+    investRate: 0.20,   // i
+    importRate: 0.06,   // m
+    exportRate: 0.06,   // x
+    particlesPerUnit: 0.035,
+  };
+
+  const sliderDefs = [
+    {key:'speed', label:'Speed', min:0.4, max:2.4, step:0.05},
+    {key:'wageProp', label:'α Wages', min:0.05, max:0.40, step:0.01},
+    {key:'taxRate', label:'t Taxes', min:0.00, max:0.50, step:0.01},
+    {key:'saveRate', label:'s Saving', min:0.00, max:0.50, step:0.01},
+    {key:'govSpendRate', label:'g Gov spend', min:0.00, max:0.60, step:0.01},
+    {key:'investRate', label:'i Investment', min:0.00, max:0.60, step:0.01},
+    {key:'importRate', label:'m Imports', min:0.00, max:0.25, step:0.005},
+    {key:'exportRate', label:'x Exports', min:0.00, max:0.25, step:0.005},
+    {key:'particlesPerUnit', label:'Density', min:0.005, max:0.08, step:0.001},
+  ];
+
+  const sliders = {};
+  const slidersDiv = document.getElementById('sliders');
+  function fmt(v){ return (Math.round(v*1000)/1000).toFixed(3); }
+
+  function addSlider(def){
+    const lab = document.createElement('label');
+    lab.textContent = def.label;
+
+    const inp = document.createElement('input');
+    inp.type='range';
+    inp.min=def.min; inp.max=def.max; inp.step=def.step;
+    inp.value=params[def.key];
+
+    const val = document.createElement('div');
+    val.className='val';
+    val.textContent=fmt(params[def.key]);
+
+    inp.addEventListener('input', () => {
+      params[def.key] = parseFloat(inp.value);
+      val.textContent = fmt(params[def.key]);
+    });
+
+    slidersDiv.appendChild(lab);
+    slidersDiv.appendChild(inp);
+    slidersDiv.appendChild(val);
+
+    sliders[def.key] = { inp, val };
+  }
+  sliderDefs.forEach(addSlider);
+
+  function setParam(k,v){
+    params[k]=v;
+    if(sliders[k]){
+      sliders[k].inp.value = v;
+      sliders[k].val.textContent = fmt(v);
+    }
+  }
+
+  // Flow toggles
+  const toggles = {
+    W: document.getElementById('flowW'),
+    C: document.getElementById('flowC'),
+    T: document.getElementById('flowT'),
+    S: document.getElementById('flowS'),
+    I: document.getElementById('flowI'),
+    G: document.getElementById('flowG'),
+    M: document.getElementById('flowM'),
+    X: document.getElementById('flowX'),
+  };
+
+  // ---------- Particles ----------
+  const particles = [];
+  const flowAcc = { W:0, C:0, T:0, S:0, I:0, G:0, M:0, X:0 };
+
+  const BLUE_PALETTE = [
+    [  3, 18, 64],[  7, 38,122],[ 11, 58,165],[  0, 92,176],
+    [ 20, 90,210],[  0,140,255],[ 55,140,235],[ 80,180,255],
+    [120,210,255],[170,235,255],[210,245,255]
+  ];
+  const flowTint = { W:0, C:2, T:1, S:4, I:3, G:5, M:6, X:7 };
+
+  function pickBlue(){ return BLUE_PALETTE[(Math.random()*BLUE_PALETTE.length)|0]; }
+  function centerOf(t){ return { x: t.x+t.w/2, y: t.y+t.h/2 }; }
+
+  function bezier(a,c1,c2,b,t){
+    const u=1-t, tt=t*t, uu=u*u;
+    const uuu=uu*u, ttt=tt*t;
+    return {
+      x: uuu*a.x + 3*uu*t*c1.x + 3*u*tt*c2.x + ttt*b.x,
+      y: uuu*a.y + 3*uu*t*c1.y + 3*u*tt*c2.y + ttt*b.y
+    };
+  }
+
+  function spawnFlow(type, from, to, amountPerSec, dt){
+    if(amountPerSec <= 0) return;
+    flowAcc[type] += amountPerSec * params.particlesPerUnit * dt;
+    const n = Math.floor(flowAcc[type]);
+    if(n <= 0) return;
+    flowAcc[type] -= n;
+
+    const a = centerOf(from), b = centerOf(to);
+    const dx=b.x-a.x, dy=b.y-a.y;
+    const len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len, ny=dx/len;
+    const bend=0.22*len;
+
+    const c1 = { x: a.x + dx*0.35 + nx*bend*(0.6-Math.random()), y: a.y + dy*0.35 + ny*bend*(0.6-Math.random()) };
+    const c2 = { x: a.x + dx*0.65 + nx*bend*(0.6-Math.random()), y: a.y + dy*0.65 + ny*bend*(0.6-Math.random()) };
+
+    for(let i=0;i<n;i++){
+      const tint = flowTint[type] || 0;
+      const col = BLUE_PALETTE[(tint + ((Math.random()*5)|0)) % BLUE_PALETTE.length] || pickBlue();
+      particles.push({
+        type,
+        t: Math.random()*0.10,
+        speed: (0.26 + Math.random()*0.20) * params.speed,
+        a, b, c1, c2,
+        r: col[0], g: col[1], bl: col[2],
+        alpha: 0.85,
+        size: 1.4 + Math.random()*1.9,
+      });
+    }
+  }
+
+  function updateParticles(dt){
+    for(let i=particles.length-1;i>=0;i--){
+      particles[i].t += particles[i].speed * dt;
+      if(particles[i].t >= 1) particles.splice(i,1);
+    }
+  }
+
+  function drawParticles(){
+    for(const p of particles){
+      const pos = bezier(p.a,p.c1,p.c2,p.b,p.t);
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(${p.r},${p.g},${p.bl},${p.alpha})`;
+      ctx.arc(pos.x, pos.y, p.size, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  // ---------- Economy ----------
+  let lastFlows = { wages:0, taxes:0, save:0, cons:0, gsp:0, inv:0, imp:0, exp:0 };
+
+  function clampFlowPerSec(perSec, stock, dt){
+    if(stock <= 0) return 0;
+    const maxPerSec = stock / Math.max(1e-9, dt);
+    return Math.max(0, Math.min(perSec, maxPerSec));
+  }
+
+  function stepEconomy(dt){
+    const F=tanks.F, Hh=tanks.H, G=tanks.G, N=tanks.N, R=tanks.R;
+    const p=params;
+
+    let wages = toggles.W.checked ? p.wageProp * F.stock : 0;
+    wages = clampFlowPerSec(wages, F.stock, dt);
+
+    let taxes = toggles.T.checked ? p.taxRate * wages : 0;
+    let disp  = wages - taxes;
+
+    let save = toggles.S.checked ? p.saveRate * disp : 0;
+    let cons = toggles.C.checked ? (disp - save) : 0;
+
+    let gsp = toggles.G.checked ? p.govSpendRate * G.stock : 0;
+    gsp = clampFlowPerSec(gsp, G.stock, dt);
+
+    let inv = toggles.I.checked ? p.investRate * N.stock : 0;
+    inv = clampFlowPerSec(inv, N.stock, dt);
+
+    let imp = toggles.M.checked ? p.importRate * F.stock : 0;
+    imp = clampFlowPerSec(imp, F.stock, dt);
+
+    let exp = toggles.X.checked ? p.exportRate * R.stock : 0;
+    exp = clampFlowPerSec(exp, R.stock, dt);
+
+    const dW=wages*dt, dT=taxes*dt, dS=save*dt, dC=cons*dt;
+    const dG=gsp*dt,  dI=inv*dt,   dM=imp*dt,  dX=exp*dt;
+
+    F.stock += (dC + dG + dI + dX) - (dW + dM);
+    Hh.stock += dW - (dT + dC + dS);
+    G.stock += dT - dG;
+    N.stock += dS - dI;
+    R.stock += dM - dX;
+
+    for(const k of Object.keys(tanks)) tanks[k].stock = Math.max(0, tanks[k].stock);
+
+    spawnFlow('W', tanks.F, tanks.H, wages, dt);
+    spawnFlow('T', tanks.H, tanks.G, taxes, dt);
+    spawnFlow('S', tanks.H, tanks.N, save,  dt);
+    spawnFlow('C', tanks.H, tanks.F, cons,  dt);
+    spawnFlow('G', tanks.G, tanks.F, gsp,   dt);
+    spawnFlow('I', tanks.N, tanks.F, inv,   dt);
+    spawnFlow('M', tanks.F, tanks.R, imp,   dt);
+    spawnFlow('X', tanks.R, tanks.F, exp,   dt);
+
+    lastFlows = { wages, taxes, save, cons, gsp, inv, imp, exp };
+  }
+
+  // ---------- Drawing helpers ----------
+  function rr(x,y,w,h,r){
+    const R = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+R,y);
+    ctx.arcTo(x+w,y,x+w,y+h,R);
+    ctx.arcTo(x+w,y+h,x,y+h,R);
+    ctx.arcTo(x,y+h,x,y,R);
+    ctx.arcTo(x,y,x+w,y,R);
+    ctx.closePath();
+  }
+
+  function drawTank(t){
+    rr(t.x,t.y,t.w,t.h,16);
+    ctx.fillStyle='rgba(255,255,255,.95)';
+    ctx.fill();
+    ctx.strokeStyle='rgba(15,23,42,.18)';
+    ctx.lineWidth=1.2;
+    ctx.stroke();
+
+    const level = Math.max(0, Math.min(1, t.stock / (t.target*2)));
+    const pad=10;
+    const innerH=t.h-36;
+    const fillH=innerH*level;
+
+    rr(t.x+pad, t.y+t.h-pad-fillH-18, t.w-2*pad, fillH+18, 12);
+    ctx.fillStyle='rgba(210,232,255,.75)';
+    ctx.fill();
+
+    ctx.fillStyle='rgba(15,23,42,.90)';
+    ctx.font='1000 14px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif';
+    ctx.fillText(t.name, t.x+12, t.y+20);
+
+    ctx.fillStyle='rgba(15,23,42,.65)';
+    ctx.font='1000 12px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif';
+    ctx.fillText(`Stock: ${Math.round(t.stock)}`, t.x+12, t.y+40);
+  }
+
+  // ---------- Edges + geometry ----------
+  const edges = [
+    {a:'F', b:'H', typ:'W', label:'W (α)'},
+    {a:'H', b:'F', typ:'C', label:'C'},
+    {a:'H', b:'G', typ:'T', label:'T (t)'},
+    {a:'H', b:'N', typ:'S', label:'S (s)'},
+    {a:'N', b:'F', typ:'I', label:'I (i)'},
+    {a:'G', b:'F', typ:'G', label:'G (g)'},
+    {a:'F', b:'R', typ:'M', label:'M (m)'},
+    {a:'R', b:'F', typ:'X', label:'X (x)'},
+  ];
+
+  function edgeGeom(aKey,bKey){
+    const A = centerOf(tanks[aKey]);
+    const B = centerOf(tanks[bKey]);
+    const dx = B.x - A.x, dy = B.y - A.y;
+    const len = Math.hypot(dx,dy) || 1;
+    const ux = dx/len, uy = dy/len;
+    const nx = -uy, ny = ux;
+
+    const from = { x: A.x + ux*70, y: A.y + uy*30 };
+    const to   = { x: B.x - ux*70, y: B.y - uy*30 };
+    const mid  = { x: (from.x+to.x)/2, y: (from.y+to.y)/2 };
+    return { from, to, mid, ux, uy, nx, ny, len };
+  }
+
+  function drawArrows(){
+    for(const e of edges){
+      if(!toggles[e.typ]?.checked) continue;
+      const g = edgeGeom(e.a,e.b);
+
+      ctx.strokeStyle='rgba(11,58,165,.10)';
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(g.from.x, g.from.y);
+      ctx.lineTo(g.to.x, g.to.y);
+      ctx.stroke();
+
+      const ah=10;
+      ctx.beginPath();
+      ctx.moveTo(g.to.x,g.to.y);
+      ctx.lineTo(g.to.x - g.ux*ah - g.uy*ah*0.6, g.to.y - g.uy*ah + g.ux*ah*0.6);
+      ctx.lineTo(g.to.x - g.ux*ah + g.uy*ah*0.6, g.to.y - g.uy*ah - g.ux*ah*0.6);
+      ctx.closePath();
+      ctx.fillStyle='rgba(11,58,165,.14)';
+      ctx.fill();
+
+      ctx.fillStyle='rgba(11,58,165,.55)';
+      ctx.font='1000 12px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif';
+      ctx.fillText(e.label, g.mid.x + g.nx*10, g.mid.y + g.ny*10);
+    }
+  }
+
+  function drawStats(){
+    const f=tanks.F;
+    const x=f.x, y=f.y+f.h+10;
+    const lines=[
+      `W: ${lastFlows.wages.toFixed(1)}/s   T: ${lastFlows.taxes.toFixed(1)}/s   S: ${lastFlows.save.toFixed(1)}/s`,
+      `C: ${lastFlows.cons.toFixed(1)}/s   G: ${lastFlows.gsp.toFixed(1)}/s   I: ${lastFlows.inv.toFixed(1)}/s`,
+      `M: ${lastFlows.imp.toFixed(1)}/s   X: ${lastFlows.exp.toFixed(1)}/s`
+    ];
+    rr(x,y,Math.min(240, W-24-x), 62, 12);
+    ctx.fillStyle='rgba(255,255,255,.92)';
+    ctx.fill();
+    ctx.strokeStyle='rgba(15,23,42,.10)';
+    ctx.stroke();
+
+    ctx.fillStyle='rgba(15,23,42,.70)';
+    ctx.font='1000 12px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif';
+    ctx.fillText(lines[0], x+10, y+22);
+    ctx.fillText(lines[1], x+10, y+40);
+    ctx.fillText(lines[2], x+10, y+58);
+  }
+
+  function fadeLayer(){
+    ctx.fillStyle='rgba(255,255,255,0.08)';
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // ---------- Visual valves (draggable) ----------
+  const valves = [
+    { typ:'W', key:'wageProp',    min:0.05, max:0.40, label:'α' },
+    { typ:'T', key:'taxRate',     min:0.00, max:0.50, label:'t' },
+    { typ:'S', key:'saveRate',    min:0.00, max:0.50, label:'s' },
+    { typ:'G', key:'govSpendRate',min:0.00, max:0.60, label:'g' },
+    { typ:'I', key:'investRate',  min:0.00, max:0.60, label:'i' },
+    { typ:'M', key:'importRate',  min:0.00, max:0.25, label:'m' },
+    { typ:'X', key:'exportRate',  min:0.00, max:0.25, label:'x' },
+  ];
+
+  const valveTrack = 64;
+  const valveOffset = 18;
+  const valveRadius = 10;
+  const valveHit = 14;
+
+  function valvePose(v){
+    const e = edges.find(x => x.typ === v.typ);
+    if(!e) return null;
+    const g = edgeGeom(e.a, e.b);
+
+    const base = { x: g.mid.x + g.nx*valveOffset, y: g.mid.y + g.ny*valveOffset };
+    const t = (params[v.key] - v.min) / (v.max - v.min);
+    const s = (t - 0.5) * valveTrack;
+
+    const knob = { x: base.x + g.nx*s, y: base.y + g.ny*s };
+    const a = { x: base.x - g.nx*(valveTrack/2), y: base.y - g.ny*(valveTrack/2) };
+    const b = { x: base.x + g.nx*(valveTrack/2), y: base.y + g.ny*(valveTrack/2) };
+
+    return { g, base, knob, a, b, t };
+  }
+
+  function drawValves(){
+    for(const v of valves){
+      if(!toggles[v.typ]?.checked) continue;
+      const p = valvePose(v);
+      if(!p) continue;
+
+      ctx.strokeStyle = 'rgba(11,58,165,.18)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(p.a.x, p.a.y);
+      ctx.lineTo(p.b.x, p.b.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(210,232,255,.95)';
+      ctx.strokeStyle = 'rgba(11,58,165,.35)';
+      ctx.lineWidth = 2;
+      ctx.arc(p.knob.x, p.knob.y, valveRadius, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(11,58,165,.85)';
+      ctx.font = '1000 12px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif';
+      ctx.fillText(v.label, p.base.x + p.g.nx*14, p.base.y + p.g.ny*14);
+
+      ctx.fillStyle = 'rgba(15,23,42,.55)';
+      ctx.font = '1000 11px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif';
+      ctx.fillText(params[v.key].toFixed(3), p.base.x + p.g.nx*18, p.base.y + p.g.ny*28);
+    }
+  }
+
+  let draggingValve = null;
+
+  function hitValve(px,py){
+    for(const v of valves){
+      if(!toggles[v.typ]?.checked) continue;
+      const p = valvePose(v);
+      if(!p) continue;
+      const dx = px - p.knob.x, dy = py - p.knob.y;
+      if(dx*dx + dy*dy <= valveHit*valveHit) return v;
+    }
+    return null;
+  }
+
+  function updateValveFromPointer(v, px, py){
+    const pose = valvePose(v);
+    if(!pose) return;
+    const g = pose.g;
+    const bx = pose.base.x, by = pose.base.y;
+    const vx = px - bx, vy = py - by;
+    const s = vx*g.nx + vy*g.ny;
+    const clamped = Math.max(-valveTrack/2, Math.min(valveTrack/2, s));
+    const t = (clamped/valveTrack) + 0.5;
+    const val = v.min + t*(v.max - v.min);
+    setParam(v.key, val);
+  }
+
+  // ---------- Accounting pills: sign-based + identity sum ----------
+  const statePill = document.getElementById('statePill');
+  const balPublic = document.getElementById('balPublic');
+  const balFin = document.getElementById('balFin');
+  const balExt = document.getElementById('balExt');
+  const balSum = document.getElementById('balSum');
+
+  function setPill(pill, cls, text){
+    pill.className = `pill ${cls}`;
+    pill.textContent = text;
+  }
+  function setPillNeutral(pill, text){
+    pill.className = 'pill';
+    pill.textContent = text;
+  }
+
+  // Positive => green (surplus), Negative => red (deficit), Near zero => amber
+  function clsForSign(x){
+    if(x > tol) return 'ok';
+    if(x < -tol) return 'bad';
+    return 'warn';
+  }
+
+  function updateAccountingPills(){
+    if(!accountingEnabled) return;
+
+    const pub = lastFlows.taxes - lastFlows.gsp;   // T - G
+    const fin = lastFlows.save  - lastFlows.inv;   // S - I
+    const ext = lastFlows.imp   - lastFlows.exp;   // M - X
+
+    const sum = pub + fin + ext;                   // should be 0 (identity)
+
+    setPill(balPublic, clsForSign(pub), `T−G: ${pub.toFixed(1)}/s`);
+    setPill(balFin,    clsForSign(fin), `S−I: ${fin.toFixed(1)}/s`);
+    setPill(balExt,    clsForSign(ext), `M−X: ${ext.toFixed(1)}/s`);
+
+    const sumCls = (Math.abs(sum) <= tol) ? 'ok' : 'bad';
+    setPill(balSum, sumCls, `(T−G)+(S−I)+(M−X): ${sum.toFixed(1)}/s`);
+  }
+
+  // ---------- Stability indicator ----------
+  let prevStocks = null;
+  let stableScore = 0;
+
+  function updateStability(dt){
+    const cur = [tanks.F.stock, tanks.H.stock, tanks.G.stock, tanks.N.stock, tanks.R.stock];
+    if(!prevStocks){ prevStocks = cur; return; }
+
+    let totalChange = 0;
+    for(let i=0;i<cur.length;i++) totalChange += Math.abs(cur[i]-prevStocks[i]);
+    prevStocks = cur;
+
+    const changePerSec = totalChange / Math.max(1e-9, dt);
+    const stableThresh = 35;
+    const warnThresh = 90;
+
+    if(changePerSec < stableThresh) stableScore = Math.min(6, stableScore + 1.2*dt*60);
+    else stableScore = Math.max(0, stableScore - 1.6*dt*60);
+
+    let cls = 'bad';
+    let label = 'Unstable';
+    if(changePerSec < stableThresh && stableScore > 3){
+      cls='ok'; label='Stable-ish';
+    } else if(changePerSec < warnThresh){
+      cls='warn'; label='Adjusting';
+    }
+    statePill.className = `pill state ${cls}`;
+    statePill.textContent = `State: ${label}`;
+  }
+
+  // ---------- Injection (drag on canvas) ----------
+  let injecting=false;
+  let lastInject=0;
+
+  function nearestTank(px,py){
+    let best=null, bestD=Infinity;
+    for(const k of Object.keys(tanks)){
+      const c=centerOf(tanks[k]);
+      const d=(c.x-px)*(c.x-px)+(c.y-py)*(c.y-py);
+      if(d<bestD){ bestD=d; best=tanks[k]; }
+    }
+    return best;
+  }
+
+  function injectMoney(px,py,dt){
+    const t = nearestTank(px,py);
+    const amount = 160 * dt;
+    t.stock += amount;
+
+    const c=centerOf(t);
+    for(let i=0;i<8;i++){
+      const col=pickBlue();
+      particles.push({
+        type:'INJ',
+        t: Math.random()*0.05,
+        speed: 0,
+        a:{x:c.x+(Math.random()-0.5)*40,y:c.y+(Math.random()-0.5)*20},
+        b:{x:c.x+(Math.random()-0.5)*40,y:c.y+(Math.random()-0.5)*20},
+        c1:{x:c.x,y:c.y}, c2:{x:c.x,y:c.y},
+        r:col[0], g:col[1], bl:col[2],
+        alpha:0.35, size:1.2+Math.random()*1.8
+      });
+    }
+  }
+
+  // Pointer handling: prioritize valves over injection
+  canvas.addEventListener('pointerdown', (e)=>{
+    const x=e.clientX, y=e.clientY;
+    const hv = hitValve(x,y);
+    if(hv){
+      draggingValve = hv;
+      return;
+    }
+    injecting=true;
+    lastInject=performance.now();
+  });
+
+  window.addEventListener('pointerup', ()=>{
+    injecting=false;
+    draggingValve=null;
+  });
+
+  canvas.addEventListener('pointermove', (e)=>{
+    const x=e.clientX, y=e.clientY;
+
+    if(draggingValve){
+      updateValveFromPointer(draggingValve, x, y);
+      return;
+    }
+
+    if(!injecting) return;
+    const now=performance.now();
+    const dt=Math.min(0.05, (now-lastInject)/1000);
+    lastInject=now;
+    injectMoney(x,y,dt);
+  });
+
+  // ---------- Reset ----------
+  function hardReset(){
+    tanks.F.stock=520; tanks.F.target=520;
+    tanks.H.stock=520; tanks.H.target=520;
+    tanks.G.stock=180; tanks.G.target=180;
+    tanks.N.stock=240; tanks.N.target=240;
+    tanks.R.stock=240; tanks.R.target=240;
+
+    particles.length=0;
+    for(const k in flowAcc) flowAcc[k]=0;
+    lastFlows={ wages:0,taxes:0,save:0,cons:0,gsp:0,inv:0,imp:0,exp:0 };
+
+    prevStocks=null; stableScore=0;
+
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,W,H);
+
+    updateAccountingPills();
+  }
+  btnReset.addEventListener('click', hardReset);
+
+  // ---------- Main loop ----------
+  let last=performance.now();
+
+  function tick(now){
+    const dt=Math.min(0.05, (now-last)/1000);
+    last=now;
+
+    if(!paused){
+      if(fadeEnabled) fadeLayer();
+      else {
+        ctx.fillStyle='rgba(255,255,255,0.01)';
+        ctx.fillRect(0,0,W,H);
+      }
+
+      stepEconomy(dt);
+      updateParticles(dt);
+      updateStability(dt);
+      updateAccountingPills();
+    } else {
+      ctx.fillStyle='rgba(255,255,255,0.015)';
+      ctx.fillRect(0,0,W,H);
+    }
+
+    drawArrows();
+    drawValves();
+    drawParticles();
+
+    drawTank(tanks.H);
+    drawTank(tanks.G);
+    drawTank(tanks.F);
+    drawTank(tanks.N);
+    drawTank(tanks.R);
+
+    drawStats();
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---------- Buttons ----------
+  btnPause.textContent='Pause';
+  btnFade.textContent='Fade: ON';
+  btnAcct.textContent='Accounting: ON';
+
+  // ---------- Keyboard shortcuts ----------
+  window.addEventListener('keydown', (e)=>{
+    if(e.key===' '){
+      paused=!paused;
+      btnPause.textContent = paused ? 'Resume' : 'Pause';
+    }
+    if(e.key==='f' || e.key==='F'){
+      fadeEnabled=!fadeEnabled;
+      btnFade.textContent = fadeEnabled ? 'Fade: ON' : 'Fade: OFF';
+      btnFade.classList.toggle('primary', fadeEnabled);
+    }
+    if(e.key==='a' || e.key==='A'){
+      accountingEnabled = !accountingEnabled;
+      btnAcct.textContent = accountingEnabled ? 'Accounting: ON' : 'Accounting: OFF';
+      btnAcct.classList.toggle('primary', accountingEnabled);
+      if(!accountingEnabled){
+        setPillNeutral(balPublic, 'T−G: off');
+        setPillNeutral(balFin, 'S−I: off');
+        setPillNeutral(balExt, 'M−X: off');
+        setPillNeutral(balSum, 'Sum: off');
+      } else {
+        updateAccountingPills();
+      }
+    }
+    if(e.key==='c' || e.key==='C'){
+      particles.length=0;
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,W,H);
+    }
+  });
+
+  // ---------- Start ----------
+  hardReset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h2 {
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            text-align: center;
+        }
+        .bop-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            padding: 20px;
+            border: 2px solid #333;
+        }
+        .drop-zone {
+            min-height: 100px;
+            padding: 10px;
+            border: 2px dashed #aaa;
+            background-color: #f9f9f9;
+        }
+        .draggable {
+            padding: 8px;
+            background-color: #007bff;
+            color: white;
+            cursor: grab;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Balance of Payments Drag-and-Drop Exercise</h2>
+        <p>Drag each transaction to its correct section of the Balance of Payments (BOP).</p>
+        
+        <div id="transactions"></div>
+        
+        <div class="bop-container">
+            <div>
+                <h3>Current Account</h3>
+                <div id="current-account" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+            <div>
+                <h3>Primary & Secondary Income</h3>
+                <div id="income-account" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+            <div>
+                <h3>Capital Account</h3>
+                <div id="capital-account" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+            <div>
+                <h3>Financial Account</h3>
+                <div id="financial-account" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+        </div>
+        
+        <button onclick="loadTransactions()">Reset Transactions</button>
+        <button onclick="checkAnswers()">Submit Answers</button>
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        const transactions = [
+            {text: "Exports of goods ($500 million)", answer: "current-account"},
+            {text: "Imports of goods ($600 million)", answer: "current-account"},
+            {text: "Foreign direct investment ($300 million)", answer: "financial-account"},
+            {text: "Remittances received ($200 million)", answer: "income-account"},
+            {text: "Government borrowing from foreign sources ($400 million)", answer: "financial-account"},
+            {text: "Dividends paid to foreign investors ($150 million)", answer: "income-account"},
+            {text: "Interest earned on foreign assets ($100 million)", answer: "income-account"},
+            {text: "Foreign aid received ($250 million)", answer: "income-account"},
+            {text: "Capital transfers received ($180 million)", answer: "capital-account"},
+            {text: "Purchase of foreign bonds ($350 million)", answer: "financial-account"}
+        ];
+        
+        function loadTransactions() {
+            document.querySelectorAll('.drop-zone').forEach(zone => zone.innerHTML = '');
+            let shuffled = transactions.sort(() => 0.5 - Math.random()).slice(0, 3);
+            let transactionHtml = '';
+            shuffled.forEach((t, index) => {
+                transactionHtml += `<div id="t${index}" class="draggable" draggable="true" ondragstart="drag(event)" data-answer="${t.answer}">${t.text}</div>`;
+            });
+            document.getElementById("transactions").innerHTML = transactionHtml;
+        }
+        
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+        
+        function drag(event) {
+            event.dataTransfer.setData("text", event.target.id);
+        }
+        
+        function drop(event) {
+            event.preventDefault();
+            let draggedElementId = event.dataTransfer.getData("text");
+            let draggedElement = document.getElementById(draggedElementId);
+            if (draggedElement && event.target.classList.contains("drop-zone")) {
+                event.target.appendChild(draggedElement);
+            }
+        }
+        
+        function checkAnswers() {
+            let score = 0;
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                Array.from(zone.children).forEach(element => {
+                    let correctAnswer = element.getAttribute("data-answer");
+                    if (zone.id === correctAnswer) {
+                        score++;
+                    }
+                });
+            });
+            document.getElementById("result").innerText = `You got ${score} out of 3 correct!`;
+        }
+        
+        window.onload = loadTransactions;
+    </script>
+</body>
+</html>
+

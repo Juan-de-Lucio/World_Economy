@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Growth Rate Calculator</title>
+    <script>
+        function getRandomValue() {
+            return Math.floor(Math.random() * 101) + 50; // Random number between 50 and 150
+        }
+
+        function calculateGrowthRate() {
+            let prevValue = parseFloat(document.getElementById("prevValue").value) || 0;
+            let currentValue = parseFloat(document.getElementById("currentValue").value) || 0;
+
+            if (prevValue <= 0 || currentValue <= 0) {
+                document.getElementById("growthRateResult").innerText = "Please enter valid positive numbers.";
+                return;
+            }
+
+            let growthRate = ((currentValue - prevValue) / prevValue) * 100;
+            document.getElementById("growthRateResult").innerText = "Growth Rate: " + growthRate.toFixed(2) + "%";
+        }
+
+        function setRandomValues() {
+            document.getElementById("prevValue").value = getRandomValue();
+            document.getElementById("currentValue").value = getRandomValue();
+        }
+
+        window.onload = setRandomValues;
+    </script>
+</head>
+<body>
+    <h2>Growth Rate Calculator</h2>
+    
+    <h3>Simple Growth Rate Calculation</h3>
+    <label for="prevValue">Previous Value: </label>
+    <input type="number" id="prevValue"><br><br>
+    <label for="currentValue">Current Value: </label>
+    <input type="number" id="currentValue"><br><br>
+    <button onclick="calculateGrowthRate()">Calculate Growth Rate</button>
+    <p id="growthRateResult">Growth Rate: --</p>
+</body>
+</html>

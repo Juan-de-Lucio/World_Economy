@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interannual Compound Rate Calculator</title>
+    <script>
+        function calculateCompoundRate() {
+            let initialValue = parseFloat(document.getElementById("initialValue").value) || 0;
+            let finalValue = parseFloat(document.getElementById("finalValue").value) || 0;
+            let years = parseFloat(document.getElementById("years").value) || 1;
+
+            if (initialValue <= 0 || finalValue <= 0 || years <= 0) {
+                document.getElementById("result").innerText = "Please enter valid positive numbers.";
+                return;
+            }
+
+            let rate = (Math.pow(finalValue / initialValue, 1 / years) - 1) * 100;
+            document.getElementById("result").innerText = "Interannual Compound Rate: " + rate.toFixed(2) + "% per year";
+        }
+    </script>
+</head>
+<body>
+    <h2>Interannual Compound Rate Calculator</h2>
+    <p><strong>Instructions:</strong> Enter the initial value, final value, and the number of years to calculate the annual compound growth rate.</p>
+    
+    <label for="initialValue">Initial Value: </label>
+    <input type="number" id="initialValue" value="1000"><br><br>
+    
+    <label for="finalValue">Final Value: </label>
+    <input type="number" id="finalValue" value="2000"><br><br>
+    
+    <label for="years">Number of Years: </label>
+    <input type="number" id="years" value="5"><br><br>
+    
+    <button onclick="calculateCompoundRate()">Calculate Compound Rate</button>
+    
+    <h3>Result:</h3>
+    <p id="result">Interannual Compound Rate: --</p>
+</body>
+</html>

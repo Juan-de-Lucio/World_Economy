@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exchange Rate Exercise</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .container {
+            margin: 20px auto;
+            padding: 15px;
+            width: 60%;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .btn {
+            padding: 10px 15px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+        }
+        .correct { color: green; font-weight: bold; }
+        .incorrect { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>Exchange Rate Exercise</h2>
+    <p>Convert the given amount based on the exchange rate.</p>
+
+    <div class="container">
+        <p id="question"></p>
+        <input type="number" id="answer" placeholder="Enter your answer">
+        <button class="btn" onclick="checkAnswer()">Submit</button>
+        <p id="feedback"></p>
+        <button class="btn" onclick="generateQuestion()">Next Question</button>
+    </div>
+
+    <script>
+        let baseCurrency = "USD";
+        let targetCurrency = "EUR";
+        let exchangeRate;
+        let amount;
+        let correctAnswer;
+
+        function generateQuestion() {
+            exchangeRate = (Math.random() * (1.5 - 0.8) + 0.8).toFixed(2); // Random rate between 0.8 and 1.5
+            amount = Math.floor(Math.random() * 1000) + 10; // Random amount between 10 and 1000
+            correctAnswer = (amount * exchangeRate).toFixed(2);
+
+            document.getElementById("question").innerText = 
+                `Convert ${amount} ${baseCurrency} to ${targetCurrency} at an exchange rate of ${exchangeRate} ${targetCurrency}/${baseCurrency}.`;
+            document.getElementById("feedback").innerText = "";
+            document.getElementById("answer").value = "";
+        }
+
+        function checkAnswer() {
+            let userAnswer = document.getElementById("answer").value;
+            if (parseFloat(userAnswer).toFixed(2) == correctAnswer) {
+                document.getElementById("feedback").innerText = "✅ Correct!";
+                document.getElementById("feedback").className = "correct";
+            } else {
+                document.getElementById("feedback").innerText = `❌ Incorrect. The correct answer is ${correctAnswer}.`;
+                document.getElementById("feedback").className = "incorrect";
+            }
+        }
+
+        generateQuestion();
+    </script>
+
+</body>
+</html>

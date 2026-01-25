@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance of Payments Simulator</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .container { width: 50%; margin: auto; padding: 20px; }
+        input { width: 150px; text-align: center; margin: 5px; }
+        .result { font-weight: bold; padding: 10px; }
+        .surplus { color: green; }
+        .deficit { color: red; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Balance of Payments Calculator</h2>
+
+        <h3>Current Account</h3>
+        <label>Exports (X): </label><input type="number" id="exports"><br>
+        <label>Imports (M): </label><input type="number" id="imports"><br>
+        <label>Remittances : </label><input type="number" id="remittances"><br>
+        <label>Net Transfers (NT)): </label><input type="number" id="netTransfers"><br>
+
+        <h3>Capital Account</h3>
+        <label>Capital Transfers & Non-Produced Assets (KT+ONPA): </label><input type="number" id="capitalAccount"><br>
+
+        <h3>Financial Account</h3>
+        <label>Foreign Direct Investment (FDI): </label><input type="number" id="fdi"><br>
+        <label>Portfolio Investment : </label><input type="number" id="portfolio"><br>
+        <label>Reserve Assets Change: </label><input type="number" id="reserves" readonly><br>
+
+        <button onclick="calculateBOP()">Calculate</button>
+        <button onclick="fillRandomValues()">Generate Random Values</button>
+
+        <div class="result" id="output"></div>
+    </div>
+
+    <script>
+        function getRandomNumber(min = -50, max = 100) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function fillRandomValues() {
+            document.getElementById('exports').value = getRandomNumber(0, 100);
+            document.getElementById('imports').value = getRandomNumber(0, 100);
+            document.getElementById('remittances').value = getRandomNumber(-50, 50);
+            document.getElementById('netTransfers').value = getRandomNumber(-50, 50);
+            document.getElementById('capitalAccount').value = getRandomNumber(-50, 50);
+            document.getElementById('fdi').value = getRandomNumber(-50, 100);
+            document.getElementById('portfolio').value = getRandomNumber(-50, 100);
+
+            calculateBOP();
+        }
+
+        function calculateBOP() {
+            let X = parseFloat(document.getElementById('exports').value) || 0;
+            let M = parseFloat(document.getElementById('imports').value) || 0;
+            let remittances = parseFloat(document.getElementById('remittances').value) || 0;
+            let netTransfers = parseFloat(document.getElementById('netTransfers').value) || 0;
+            let capitalAccount = parseFloat(document.getElementById('capitalAccount').value) || 0;
+            let fdi = parseFloat(document.getElementById('fdi').value) || 0;
+            let portfolio = parseFloat(document.getElementById('portfolio').value) || 0;
+
+            let tradeBalance = X - M;
+            let CA = tradeBalance + remittances + netTransfers;
+            let KA = capitalAccount;
+            let netLendingBorrowing = CA + KA;
+            let FA = fdi + portfolio;
+            let reserves = (netLendingBorrowing - FA);
+
+            document.getElementById('reserves').value = reserves.toFixed(2);
+
+            let output = document.getElementById('output');
+            output.innerHTML = `<strong>Current Account (CA):</strong> ${CA.toFixed(2)}<br>
+                                <strong>Capital Account (KA):</strong> ${KA.toFixed(2)}<br>
+                                <strong>Net Lending/Borrowing Position (NLBP):</strong> ${netLendingBorrowing.toFixed(2)}<br>
+                                <strong>Financial Account -  Reserves (FA-R):</strong> ${FA.toFixed(2)}<br>
+                                <strong>Reserve Assets Change:</strong> ${reserves.toFixed(2)}<br>`;
+
+            output.className = netLendingBorrowing >= 0 ? "result surplus" : "result deficit";
+        }
+
+        window.onload = fillRandomValues;
+    </script>
+
+</body>
+</html>

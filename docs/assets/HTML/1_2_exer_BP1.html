@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance of Payments Exercise</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .question {
+            margin: 20px auto;
+            padding: 15px;
+            width: 60%;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .btn {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .correct { background-color: #4CAF50; color: white; }
+        .incorrect { background-color: #f44336; color: white; }
+        #nextBtn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Balance of Payments: Classify the following transaction into the correct category.</h2>
+    <p></p>
+
+    <div id="questionBox" class="question">
+        <p id="questionText"></p>
+        <button class="btn" onclick="checkAnswer('current')">Current Account</button>
+        <button class="btn" onclick="checkAnswer('financial')">Financial Account</button>
+        <button class="btn" onclick="checkAnswer('capital')">Capital Account</button>
+    </div>
+
+    <button id="nextBtn" onclick="nextQuestion()">Next</button>
+
+    <script>
+const questions = [
+    // 🔹 Cuenta Corriente: Bienes, Servicios, Renta primaria y secundaria
+    { text: "Export of automobiles to another country", correct: "current" },
+    { text: "Import of petroleum", correct: "current" },
+    { text: "Foreign tourists spending in the country", correct: "current" },
+    { text: "Payment of interest on external debt", correct: "current" },
+    { text: "Import of raw materials", correct: "current" },
+    { text: "A company receives royalties from a foreign subsidiary", correct: "current" },
+    { text: "Import of luxury cars", correct: "current" },
+    { text: "Export of agricultural products", correct: "current" },
+    { text: "Import of pharmaceuticals", correct: "current" },
+    { text: "Income repatriation by foreign workers", correct: "current" },
+    { text: "Dividends paid to foreign investors", correct: "current" },
+    { text: "Export of consulting services", correct: "current" },
+    { text: "Import of construction machinery", correct: "current" },
+    { text: "Subscription payments to a foreign streaming service", correct: "current" },
+    { text: "Technology licensing fees paid to a foreign firm", correct: "current" },
+    { text: "Import of electronic devices", correct: "current" },
+    { text: "Export of software services", correct: "current" },
+    { text: "Compensation paid to foreign workers", correct: "current" },
+    { text: "Import of food products", correct: "current" },
+    { text: "Government spending on foreign military equipment", correct: "current" },
+    { text: "A foreign artist receiving royalties from domestic music sales", correct: "current" },
+    { text: "Import of professional consulting services", correct: "current" },
+
+    { text: "Foreign government grants for infrastructure projects", correct: "current" },
+    { text: "Government grants to a foreign country", correct: "current" },
+    { text: "A country receiving war reparations from another nation", correct: "current" },
+    { text: "A country receiving a large transfer for post-disaster reconstruction", correct: "current" },
+
+    // 🔹 Cuenta Financiera: Inversión directa, de cartera, otra inversión y reservas
+    { text: "Purchase of foreign company bonds", correct: "financial" },
+    { text: "Foreign direct investment in national factories", correct: "financial" },
+    { text: "A foreigner buys a house in the country", correct: "financial" },
+    { text: "Loan repayment to a foreign bank", correct: "financial" },
+    { text: "A multinational reinvests profits in its subsidiary abroad", correct: "financial" },
+    { text: "Foreign investors buy government bonds", correct: "financial" },
+    { text: "A foreign company acquires shares in a domestic firm", correct: "financial" },
+    { text: "Foreign investors buying property in the country", correct: "financial" },
+    { text: "Foreign company deposits in domestic banks", correct: "financial" },
+    { text: "A local bank lending to a foreign business", correct: "financial" },
+    { text: "Sale of gold reserves to another country", correct: "financial" },
+    { text: "Foreign acquisition of a domestic telecommunications company", correct: "financial" },
+    { text: "A domestic pension fund investing in foreign bonds", correct: "financial" },
+    { text: "Foreign bank loans to a domestic corporation", correct: "financial" },
+    { text: "A company in the country acquiring a foreign firm", correct: "financial" },
+    { text: "Foreign central bank deposits in domestic banks", correct: "financial" },
+
+    // 🔹 Cuenta de Capital: Transferencias de capital y activos no financieros
+
+    { text: "A government selling a spectrum license to a foreign company", correct: "capital" },
+    { text: "Purchase of land by one government from another", correct: "capital" },
+    { text: "A government selling airspace rights to a foreign airline", correct: "capital" },
+    { text: "Debt forgiveness by a foreign country", correct: "capital" },
+    { text: "Transfer of goods and financial assets by migrants leaving or entering a country", correct: "capital" },
+
+];
+
+
+        let currentQuestionIndex = -1;
+
+        function nextQuestion() {
+            currentQuestionIndex = Math.floor(Math.random() * questions.length);
+            document.getElementById("questionText").innerText = questions[currentQuestionIndex].text;
+            document.getElementById("questionBox").style.backgroundColor = "#f9f9f9";
+        }
+
+        function checkAnswer(answer) {
+            if (questions[currentQuestionIndex].correct === answer) {
+                document.getElementById("questionBox").style.backgroundColor = "#d4edda"; // Green if correct
+            } else {
+                document.getElementById("questionBox").style.backgroundColor = "#f8d7da"; // Red if incorrect
+            }
+        }
+
+        nextQuestion();
+    </script>
+
+</body>
+</html>

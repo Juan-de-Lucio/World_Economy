@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exchange Rate Exercise</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .container {
+            margin: 20px auto;
+            padding: 15px;
+            width: 60%;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .btn {
+            padding: 10px 15px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+        }
+        .correct { color: green; font-weight: bold; }
+        .incorrect { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>Nominal vs. Real Exchange Rate Exercise</h2>
+    <p>Solve the following exchange rate problem.</p>
+
+    <div class="container">
+        <p id="question"></p>
+        <input type="number" id="answer" placeholder="Enter your answer">
+        <button class="btn" onclick="checkAnswer()">Submit</button>
+        <p id="feedback"></p>
+        <button class="btn" onclick="generateQuestion()">Next Question</button>
+    </div>
+
+    <script>
+        let questionType;
+        let nominalRate, priceDomestic, priceForeign, realRate, correctAnswer;
+
+        function generateQuestion() {
+            questionType = Math.random() < 0.5 ? "nominal" : "real"; // 50% chance for each type
+
+            if (questionType === "nominal") {
+                // Generate a nominal exchange rate question
+                nominalRate = (Math.random() * (1.5 - 0.8) + 0.8).toFixed(2); // Between 0.8 and 1.5
+                priceDomestic = Math.floor(Math.random() * 100) + 50; // Between 50 and 150
+                priceForeign = (priceDomestic / nominalRate).toFixed(2);
+                correctAnswer = nominalRate;
+                document.getElementById("question").innerText = 
+                    `If the price of a product is ${priceDomestic} USD in the U.S. and ${priceForeign} EUR in Europe, what is the **nominal exchange rate (USD/EUR)** according these price variations?`;
+            } else {
+                // Generate a real exchange rate question
+                nominalRate = (Math.random() * (1.5 - 0.8) + 0.8).toFixed(2); // Between 0.8 and 1.5
+                priceDomestic = Math.floor(Math.random() * 100) + 50; // Between 50 and 150
+                priceForeign = Math.floor(Math.random() * 100) + 50; // Between 50 and 150
+                realRate = ((nominalRate * priceForeign) / priceDomestic).toFixed(2);
+                correctAnswer = realRate;
+                document.getElementById("question").innerText = 
+                    `If the nominal exchange rate is ${nominalRate} USD/EUR, the price level in the U.S. is ${priceDomestic} and in Europe is ${priceForeign}, what is the **real exchange rate**?`;
+            }
+
+            document.getElementById("feedback").innerText = "";
+            document.getElementById("answer").value = "";
+        }
+
+        function checkAnswer() {
+            let userAnswer = document.getElementById("answer").value;
+            if (parseFloat(userAnswer).toFixed(2) == correctAnswer) {
+                document.getElementById("feedback").innerText = "✅ Correct!";
+                document.getElementById("feedback").className = "correct";
+            } else {
+                document.getElementById("feedback").innerText = `❌ Incorrect. The correct answer is ${correctAnswer}.`;
+                document.getElementById("feedback").className = "incorrect";
+            }
+        }
+
+        generateQuestion();
+    </script>
+
+</body>
+</html>
+

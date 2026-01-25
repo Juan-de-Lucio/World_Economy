@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ranking PIB pc PPA — Interactivo</title>
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; background: #fff; color: #111; }
+    h1 { font-size: 1.3rem; margin-bottom: 6px; }
+    .small { color: #555; font-size: 12px; }
+    .row { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 12px; background: #fafafa; }
+    label { font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; display:block; }
+    #search, select, button { font-family: inherit; }
+    #search { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; }
+    #countries { width: 100%; height: 380px; border: 1px solid #ccc; border-radius: 6px; padding: 6px; }
+    #chart { width: 100%; height: 560px; }
+    button { padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc; background: white; cursor: pointer; }
+    button:hover { background: #f3f4f6; }
+    .toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top: 8px; }
+    select#indicator { padding:4px 6px; border-radius:6px; border:1px solid #ccc; }
+    .badge { background:#eef2ff; color:#3730a3; border-radius:999px; padding:2px 6px; font-size:11px; }
+  </style>
+</head>
+<body>
+  <h1>Ranking de PIB per cápita (PPA) — Interactivo 1990–2024</h1>
+  <p class="small">Fuente: Banco Mundial. Selecciona el indicador y los países. Solo se muestran países con datos completos (1990–2024).</p>
+  <div class="row">
+    <div class="card">
+      <label for="indicator">Indicador:</label>
+      <select id="indicator">
+        <option value="NY.GDP.PCAP.PP.KD">PIB per cápita PPA (constantes 2017)</option>
+        <option value="NY.GDP.PCAP.PP.CD">PIB per cápita PPA (corrientes)</option>
+      </select>
+      <label for="search">Buscar país</label>
+      <input id="search" type="text" placeholder="Filtra países (ej. Spain, Chile, France)" />
+      <label for="countries">Selecciona países (Ctrl/Cmd para varios)</label>
+      <select id="countries" multiple></select>
+      <div class="toolbar">
+        <button id="btn-clear">Limpiar</button>
+        <button id="btn-sample">Ejemplo (ESP, FRA, USA)</button>
+        <span id="count" class="badge">Cargando…</span>
+      </div>
+    </div>
+    <div class="card">
+      <div id="chart"></div>
+    </div>
+  </div>
+
+  <script>
+  const START_YEAR = 1990, END_YEAR = 2024;
+  const YEARS = Array.from({length: END_YEAR - START_YEAR + 1}, (_,i)=>START_YEAR+i);
+
+  // Lista extendida de agregados (regiones, ingresos, etc.)
+  const AGG = new Set([
+    "WLD","EAP","EAS","ECA","ECS","EMU","EUU","FCS","HIC","HPC","IBD","IBT","IDA","IDB","IDX","INX",
+    "LAC","LCN","LDC","LIC","LMY","LMC","MIC","MEA","MNA","NAC","OED","OECD","OSS","PSS","PST","SAS",
+    "SSA","SSF","SST","UMC","ARB","CEB","EAR","LTE","MEA","NRS","TLA","TEA","TEC","TSS","TSA","TMN",
+    "PRE","CSS","AFE","AFW","TNA","CTE"
+  ]);
+
+  const sel = document.getElementById('countries');
+  const search = document.getElementById('search');
+  const indicatorSelect = document.getElementById('indicator');
+  const countBadge = document.getElementById('count');
+
+  function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+  async function fetchAllPages(indicator){
+    let page=1, rows=[], pages=1;
+    do {
+      const url=`https://api.worldbank.org/v2/country/all/indicator/${indicator}?format=json&per_page=20000&page=${page}`;
+      const res=await fetch(url);
+      if(!res.ok) throw new Error("Error "+res.status);
+      const data=await res.json();
+      if(!Array.isArray(data)||data.length<2||!data[1]) break;
+      const meta=data[0]; pages=meta.pages??1;
+      rows.push(...data[1]);
+      page++; await sleep(80);
+    }while(page<=pages);
+    return rows;
+  }
+
+  function normalize(rows){
+    const map=new Map();
+    for(const r of rows){
+      const iso3=(r.countryiso3code||"").toUpperCase();
+      const name=(r.country&&r.country.value)?r.country.value:(r.country&&r.country.id)||iso3;
+      const year=parseInt(r.date,10);
+      const val=(r.value==null)?null:Number(r.value);
+      if(!iso3||!/^[A-Z]{3}$/.test(iso3)) continue;
+      if(AGG.has(iso3)) continue;
+      if(Number.isNaN(year)) continue;
+      if(!map.has(iso3)) map.set(iso3,{name,values:new Map()});
+      map.get(iso3).values.set(year,val);
+    }
+    return map;
+  }
+
+  function filterCompleteCountries(map){
+    const kept=new Map();
+    for(const [iso3,obj] of map.entries()){
+      let ok=true;
+      for(const y of YEARS){
+        const v=obj.values.get(y);
+        if(v==null||Number.isNaN(v)){ok=false;break;}
+      }
+      if(ok) kept.set(iso3,obj);
+    }
+    return kept;
+  }
+
+  function computeRanks(map){
+    const ranks=new Map();
+    for(const y of YEARS){
+      const arr=[];
+      for(const [iso3,obj] of map.entries()){
+        arr.push([iso3,obj.values.get(y)]);
+      }
+      arr.sort((a,b)=>b[1]-a[1]);
+      const yrRanks=new Map(); let rank=1;
+      for(let i=0;i<arr.length;i++){
+        if(i>0 && arr[i][1]<arr[i-1][1]) rank=i+1;
+        yrRanks.set(arr[i][0],rank);
+      }
+      ranks.set(y,yrRanks);
+    }
+    return ranks;
+  }
+
+  function populateSelect(map){
+    const arr=Array.from(map.entries()).map(([iso3,obj])=>({iso3,name:obj.name}));
+    arr.sort((a,b)=>a.name.localeCompare(b.name));
+    sel.innerHTML="";
+    for(const {iso3,name} of arr){
+      const opt=document.createElement('option');
+      opt.value=iso3; opt.textContent=`${name} (${iso3})`;
+      sel.appendChild(opt);
+    }
+  }
+
+  function filterOptions(q){
+    const rq=q.trim().toLowerCase();
+    for(const opt of sel.options){
+      opt.style.display=rq===""||opt.textContent.toLowerCase().includes(rq)?"":"none";
+    }
+  }
+
+  function selectedIso3(){
+    return Array.from(sel.selectedOptions).map(o=>o.value);
+  }
+
+  function plot(map,ranks,isoList,indicatorLabel){
+    const traces=isoList.map(iso3=>{
+      const obj=map.get(iso3); if(!obj) return null;
+      const ys=YEARS.map(y=>ranks.get(y).get(iso3));
+      return {x:YEARS,y:ys,mode:'lines+markers',name:`${obj.name} (${iso3})`};
+    }).filter(Boolean);
+    const layout = {
+    title: { text: `Ranking PIB pc (${indicatorLabel}) — ${isoList.length} país(es)`, font: { size: 14 } },
+
+    xaxis: { title: { text: 'Año', font: { size: 11 } }, dtick: 5, tickfont: { size: 10 } },
+    yaxis: { title: { text: 'Puesto (1 = mayor)', font: { size: 11 } }, autorange: 'reversed', tickfont: { size: 10 } },
+
+    hovermode: 'x unified',
+
+    legend: {
+        orientation: 'h',
+        x: 0.5,
+        xanchor: 'center',
+        y: -0.25,          // debajo del gráfico
+        yanchor: 'top',
+        font: { size: 10 }
+    },
+
+    margin: { t: 50, r: 20, b: 95, l: 60 },  // más margen abajo para que quepa la leyenda
+    };
+    Plotly.newPlot('chart',traces,layout,{responsive:true});
+  }
+
+  async function loadAndRender(){
+    const indicator=indicatorSelect.value;
+    const label=indicatorSelect.options[indicatorSelect.selectedIndex].text;
+    countBadge.textContent="Descargando…";
+    sel.innerHTML=""; Plotly.purge('chart');
+    try{
+      const rows=await fetchAllPages(indicator);
+      const mapAll=normalize(rows);
+      const complete=filterCompleteCountries(mapAll);
+      const ranks=computeRanks(complete);
+      populateSelect(complete);
+      countBadge.textContent=`${complete.size} países con datos completos`;
+      sel.onchange=()=>plot(complete,ranks,selectedIso3(),label);
+      search.oninput=()=>filterOptions(search.value);
+      document.getElementById('btn-clear').onclick=()=>{for(const o of sel.options)o.selected=false;plot(complete,ranks,[],label);};
+      document.getElementById('btn-sample').onclick=()=>{
+        for(const o of sel.options)o.selected=false;
+        for(const c of ["ESP","FRA","USA"]){const opt=[...sel.options].find(o=>o.value===c);if(opt)opt.selected=true;}
+        plot(complete,ranks,selectedIso3(),label);
+      };
+      document.getElementById('btn-sample').click();
+    }catch(e){
+      console.error(e);
+      countBadge.textContent="Error";
+      alert("Error al cargar datos. Intenta más tarde.");
+    }
+  }
+
+  indicatorSelect.addEventListener('change',loadAndRender);
+  loadAndRender();
+  </script>
+</body>
+</html>
+
