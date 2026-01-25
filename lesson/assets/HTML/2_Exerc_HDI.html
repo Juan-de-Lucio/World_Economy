@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HDI Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body onload="initializeValues()">
+
+<div class="container">
+    <h2>Human Development Index (HDI) Calculator</h2>
+    
+    <label for="lifeExpectancy">Life Expectancy at Birth:</label>
+    <input type="number" id="lifeExpectancy" min="20" max="85">
+
+    <label for="meanSchooling">Mean Years of Schooling:</label>
+    <input type="number" id="meanSchooling" min="0" max="15">
+
+    <label for="expectedSchooling">Expected Years of Schooling:</label>
+    <input type="number" id="expectedSchooling" min="0" max="18">
+
+    <label for="gni">Gross National Income per Capita (PPP):</label>
+    <input type="number" id="gni" min="100" max="75000">
+
+    <button onclick="calculateHDI()">Calculate HDI</button>
+
+    <p class="result">HDI: <span id="hdiResult">---</span></p>
+</div>
+
+<script>
+    function getRandom(min, max) {
+        return (Math.random() * (max - min) + min).toFixed(1); // Keep 1 decimal place
+    }
+
+    function initializeValues() {
+        document.getElementById("lifeExpectancy").value = getRandom(20, 85);
+        document.getElementById("meanSchooling").value = getRandom(0, 15);
+        document.getElementById("expectedSchooling").value = getRandom(0, 18);
+        document.getElementById("gni").value = getRandom(100, 75000);
+    }
+
+    function calculateHDI() {
+        let LE = parseFloat(document.getElementById("lifeExpectancy").value);
+        let MYS = parseFloat(document.getElementById("meanSchooling").value);
+        let EYS = parseFloat(document.getElementById("expectedSchooling").value);
+        let GNIpc = parseFloat(document.getElementById("gni").value);
+
+        if (isNaN(LE) || isNaN(MYS) || isNaN(EYS) || isNaN(GNIpc)) {
+            document.getElementById("hdiResult").innerText = "Please enter all values.";
+            return;
+        }
+
+        let I_Health = (LE - 20) / (85 - 20);
+        let I_MYS = MYS / 15;
+        let I_EYS = EYS / 18;
+        let I_Education = (I_MYS + I_EYS) / 2;
+        let I_Income = (Math.log(GNIpc) - Math.log(100)) / (Math.log(75000) - Math.log(100));
+
+        let HDI = Math.cbrt(I_Health * I_Education * I_Income);
+
+        document.getElementById("hdiResult").innerText = HDI.toFixed(3);
+    }
+</script>
+
+</body>
+</html>
+
+
+
+

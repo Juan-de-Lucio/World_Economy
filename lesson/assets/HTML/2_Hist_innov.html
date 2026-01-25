@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang='es'>
+<head>
+<meta charset='utf-8'/>
+<meta name='viewport' content='width=device-width, initial-scale=1'/>
+<title>Ritmo histórico de innovación — Interactivo (1000–2025 visible)</title>
+<script src='https://cdn.plot.ly/plotly-2.30.0.min.js'></script>
+<style>
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 20px; }
+.controls { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+label { font-weight: 600; }
+#chart { width: 100%; max-width: 900px; height: 420px; }
+.small { color:#555; font-size:12px; }
+</style>
+</head>
+<body>
+  <h2>Ritmo histórico de innovación (ln años para N inventos) — datos completos, vista 1000–2025</h2>
+  <div class='controls'>
+    <label for='window'>Nº de inventos (ventana):</label>
+    <input type='range' id='window' min='3' max='50' value='10' step='1' />
+    <span id='winval'>10</span>
+    <label style='margin-left:16px;'><input type='checkbox' id='mark1870' checked> Marcar 1870</label>
+    <span class='small'>Rango visible: 1000 a 2025 (dtick = 100 años)</span>
+  </div>
+  <div id='chart'></div>
+<script>
+const years = [-2600000, -1500000, -1000000, -400000, -100000, -40000, -35000, -30000, -20000, -10000, -9000, -9000, -8000, -8000, -6000, -5500, -5000, -5000, -3500, -3200, -3200, -3000, -3000, -3000, -3000, -2500, -2000, -2000, -2000, -2000, -1500, -1200, -700, -700, -300, -250, -200, -100, -100, -100, -50, -50, 100, 100, 132, 200, 806, 850, 868, 1040, 1040, 1100, 1150, 1180, 1200, 1200, 1280, 1300, 1320, 1400, 1400, 1400, 1400, 1420, 1450, 1494, 1501, 1590, 1593, 1608, 1620, 1628, 1642, 1643, 1650, 1656, 1679, 1730, 1733, 1752, 1764, 1769, 1785, 1786, 1793, 1795, 1796, 1796, 1800, 1804, 1807, 1807, 1810, 1816, 1825, 1825, 1826, 1826, 1829, 1832, 1834, 1834, 1836, 1837, 1839, 1839, 1843, 1844, 1846, 1847, 1851, 1851, 1852, 1853, 1856, 1861, 1863, 1863, 1866, 1867, 1867, 1867, 1876, 1876, 1877, 1878, 1879, 1880, 1881, 1883, 1885, 1885, 1885, 1887, 1888, 1888, 1895, 1895, 1895, 1896, 1897, 1899, 1900, 1900, 1901, 1902, 1903, 1904, 1904, 1904, 1905, 1906, 1906, 1907, 1908, 1913, 1913, 1913, 1914, 1914, 1916, 1922, 1923, 1923, 1927, 1927, 1928, 1928, 1929, 1929, 1930, 1930, 1932, 1932, 1935, 1935, 1935, 1938, 1938, 1939, 1939, 1940, 1941, 1942, 1946, 1947, 1947, 1948, 1950, 1951, 1952, 1952, 1952, 1953, 1953, 1954, 1955, 1955, 1955, 1955, 1957, 1957, 1958, 1958, 1959, 1959, 1959, 1959, 1960, 1960, 1960, 1960, 1960, 1960, 1960, 1960, 1961, 1962, 1962, 1963, 1963, 1963, 1964, 1964, 1965, 1965, 1966, 1967, 1968, 1969, 1969, 1969, 1969, 1970, 1970, 1970, 1971, 1971, 1971, 1971, 1972, 1972, 1973, 1973, 1974, 1974, 1974, 1975, 1975, 1977, 1977, 1977, 1978, 1978, 1979, 1980, 1980, 1980, 1980, 1980, 1980, 1981, 1982, 1982, 1983, 1983, 1983, 1984, 1984, 1984, 1986, 1986, 1986, 1986, 1987, 1988, 1989, 1989, 1991, 1991, 1991, 1991, 1991, 1992, 1992, 1993, 1993, 1993, 1994, 1994, 1994, 1994, 1994, 1995, 1995, 1995, 1995, 1995, 1995, 1996, 1996, 1996, 1996, 1997, 1997, 1997, 1998, 1998, 1998, 1998, 1999, 1999, 1999, 2000, 2000, 2001, 2001, 2001, 2001, 2001, 2002, 2003, 2003, 2004, 2004, 2004, 2004, 2004, 2004, 2004, 2005, 2005, 2005, 2006, 2006, 2007, 2007, 2007, 2007, 2007, 2008, 2008, 2008, 2008, 2009, 2009, 2009, 2009, 2010, 2010, 2010, 2010, 2010, 2010, 2011, 2011, 2011, 2011, 2011, 2012, 2012, 2012, 2012, 2013, 2013, 2013, 2013, 2013, 2014, 2014, 2014, 2014, 2014, 2015, 2015, 2015, 2016, 2017, 2017, 2018, 2018, 2018, 2018, 2019, 2019, 2019, 2020, 2020, 2020, 2021];
+function computeSeries(k) {
+  const y = new Array(years.length).fill(null);
+  for (let i=k; i<years.length; i++) {
+    const delta = Math.abs(years[i] - years[i-k]);
+    y[i] = Math.log(delta);
+  }
+  return y;
+}
+const slider = document.getElementById('window');
+const winval = document.getElementById('winval');
+const chart = document.getElementById('chart');
+const mark1870 = document.getElementById('mark1870');
+function draw(k) {
+  const y = computeSeries(k);
+  const x = years;
+  const traces = [{ x, y, mode:'lines', name:'ln(años para '+k+' inventos)' }];
+  if (mark1870.checked) {
+    const yy = y.filter(v => v!=null);
+    const ymin = Math.min(...yy), ymax = Math.max(...yy);
+    traces.push({ x:[1870,1870], y:[ymin,ymax], mode:'lines', line:{color:'red',dash:'dash'}, name:'1870' });
+  }
+  const layout = {
+    xaxis: { title:'Año', tick0:1000, dtick:100, range:[1000,2025] },
+    yaxis: { title:'ln(Años para '+k+' inventos)' },
+    margin: { t: 40, r: 20, b: 60, l: 60 },
+    showlegend: true, hovermode:'x unified',
+    title: 'Ritmo histórico de innovación (ventana de '+k+' inventos)'
+  };
+  Plotly.newPlot(chart, traces, layout, {displayModeBar:true, responsive:true});
+}
+slider.addEventListener('input', e => { winval.textContent = e.target.value; draw(parseInt(e.target.value,10)); });
+mark1870.addEventListener('change', () => draw(parseInt(slider.value,10)));
+draw(10);  // start at 10 as requested
+</script>
+</body>
+</html>

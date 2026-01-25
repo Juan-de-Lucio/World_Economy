@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gini Coefficient Formula</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+        };
+    </script>
+    <script type="text/javascript" async 
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        .formula-container { max-width: 600px; margin: auto; padding: 20px; border-radius: 10px; background: #f9f9f9; }
+        h2 { color: #333; }
+        .formula { font-size: 1.2em; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="formula-container">
+        <h2>Gini Coefficient Formula</h2>
+        <p>The Gini coefficient measures income inequality using the formula:</p>
+        <p class="formula">
+            \[
+            I_G = \frac{\sum_{i=1}^{N-1} (p_i - q_i)}{\sum_{i=1}^{N-1} p_i} 
+            = 1 - \frac{\sum_{i=1}^{N-1} q_i}{\sum_{i=1}^{N-1} p_i}
+            \]
+        </p>
+        <p>Where:</p>
+        <ul style="text-align: left; display: inline-block;">
+            <li>\( p_i \) is the cumulative population share</li>
+            <li>\( q_i \) is the cumulative income share</li>
+            <li>\( N \) is the total number of individuals or groups</li>
+        </ul>
+    </div>
+
+</body>
+</html>

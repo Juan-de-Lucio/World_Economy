@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Median Age Over Years</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="medianAgeChart"></canvas>
+    <script>
+        const ctx = document.getElementById('medianAgeChart').getContext('2d');
+        const years = [
+            1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959,
+            1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969,
+            1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979,
+            1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989,
+            1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
+            2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
+            2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019,
+            2020, 2021, 2022, 2023, 2024
+        ];
+        const medianAges = [
+            22.1587, 22.1228, 22.0739, 22.0109, 21.937, 21.8388, 21.7437, 21.6385, 21.5314, 21.4712,
+            21.4546, 21.444, 21.3687, 21.2008, 21.0042, 20.8115, 20.6258, 20.4814, 20.3926, 20.333,
+            20.3076, 20.32, 20.3626, 20.433, 20.5325, 20.6593, 20.8037, 20.9671, 21.1316, 21.2945,
+            21.452, 21.5887, 21.6911, 21.78, 21.8742, 22.0052, 22.1931, 22.3879, 22.5752, 22.7513,
+            22.9226, 23.1001, 23.3013, 23.5201, 23.7499, 23.9796, 24.209, 24.4381, 24.6725, 24.9072,
+            25.1309, 25.3403, 25.5411, 25.7367, 25.9311, 26.1228, 26.3234, 26.5334, 26.7435, 26.953,
+            27.1708, 27.3923, 27.6114, 27.8303, 28.0579, 28.2955, 28.5399, 28.7864, 29.0409, 29.3053,
+            29.5754, 29.833, 30.0929, 30.3637, 30.6211
+        ];
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: 'Median Age (years)',
+                    data: medianAges,
+                    borderColor: 'blue',
+                    backgroundColor: 'rgba(0, 0, 255, 0.2)',
+                    borderWidth: 2,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Median Age (years)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

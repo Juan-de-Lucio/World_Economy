@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Slider de innovaciones</title>
+  <style>
+    body {
+      background: #ffffff;
+      color: #111;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Helvetica, Arial;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .card {
+      width: 90%;
+      max-width: 800px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+    }
+    .meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .big {
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 0.5rem 0;
+    }
+    .title {
+      text-align: center;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+    }
+    input[type=range] {
+      width: 100%;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    button, input[type=number] {
+      border: 1px solid #bbb;
+      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      background: #f8f8f8;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #eee;
+    }
+    .progress {
+      height: 6px;
+      background: #eee;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .bar {
+      height: 100%;
+      background: #0074d9;
+      width: 0%;
+      transition: width 0.2s;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Slider de innovaciones</h1>
+    <div class="meta">
+      <span>Posición: <b id="pos">0</b>/<b id="total">0</b></span>
+      <span>Año: <b id="year">–</b></span>
+      <span>Δ10 inv.: <b id="delta10">–</b> años</span>
+      <span>ln(Δ10): <b id="lndelta10">–</b></span>
+    </div>
+    <div class="big" id="yearBig">–</div>
+    <div class="title" id="name">Sin datos cargados</div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+
+    <input id="slider" type="range" min="1" max="1" value="1">
+
+    <div class="controls">
+      <button id="prev">⟵ Anterior</button>
+      <button id="next">Siguiente ⟶</button>
+      <button id="play">▶︎ Auto</button>
+      <label>Velocidad (ms): <input id="speed" type="number" value="900" min="100" step="100" style="width:80px"></label>
+    </div>
+  </div>
+
+  <script>
+    const slider = document.getElementById('slider');
+    const posEl = document.getElementById('pos');
+    const totalEl = document.getElementById('total');
+    const yearEl = document.getElementById('year');
+    const yearBigEl = document.getElementById('yearBig');
+    const nameEl = document.getElementById('name');
+    const delta10El = document.getElementById('delta10');
+    const lndelta10El = document.getElementById('lndelta10');
+    const barEl = document.getElementById('bar');
+
+    let data = [];
+    let timer = null;
+
+    function render(index){
+      if(!data.length) return;
+      index = Math.max(1, Math.min(index, data.length));
+      slider.value = index;
+      const i = index - 1;
+      const row = data[i];
+      posEl.textContent = index;
+      totalEl.textContent = data.length;
+      yearEl.textContent = row.Fecha;
+      yearBigEl.textContent = row.Fecha;
+      nameEl.textContent = row.Invento;
+      delta10El.textContent = row.delta10!=null ? row.delta10.toFixed(0) : '—';
+      lndelta10El.textContent = row.lnDelta10!=null ? row.lnDelta10.toFixed(2) : '—';
+      barEl.style.width = (index * 100 / data.length) + '%';
+    }
+
+    function computeDelta10(arr){
+      for(let i=0;i<arr.length;i++){
+        const j = i+10;
+        if(j < arr.length){
+          const d = Math.abs(arr[j].Fecha - arr[i].Fecha);
+          arr[i].delta10 = d;
+          arr[i].lnDelta10 = d > 0 ? Math.log(d) : null;
+        } else {
+          arr[i].delta10 = null;
+          arr[i].lnDelta10 = null;
+        }
+      }
+    }
+
+    document.getElementById('prev').onclick = ()=> render(parseInt(slider.value,10)-1);
+    document.getElementById('next').onclick = ()=> render(parseInt(slider.value,10)+1);
+
+    document.getElementById('play').onclick = (e)=>{
+      if(timer){
+        clearInterval(timer); timer=null; e.target.textContent='▶︎ Auto'; return;
+      }
+      const speed = Math.max(50, parseInt(document.getElementById('speed').value,10) || 900);
+      e.target.textContent='⏸ Pausa';
+      timer = setInterval(()=>{
+        let k = parseInt(slider.value,10)+1; if(k>data.length){k=1}
+        render(k);
+      }, speed);
+    };
+
+    const sample = [
+      {Invento:"Herramientas de piedra", Fecha:-2600000},
+      {Invento:"Hachas de mano", Fecha:-1500000},
+      {Invento:"Fuego controlado", Fecha:-1000000},
+      {Invento:"Punta de lanza", Fecha:-400000},
+      {Invento:"Uso de pigmentos / pintura rupestre", Fecha:-100000},
+      {Invento:"Aguja de coser (hueso)", Fecha:-40000},
+      {Invento:"Ropa confeccionada", Fecha:-35000},
+      {Invento:"Cestería", Fecha:-30000},
+      {Invento:"Adhesivos primitivos (resinas)", Fecha:-20000},
+      {Invento:"Barca / canoa", Fecha:-10000},
+      {Invento:"Cerámica", Fecha:-9000},
+      {Invento:"Molino de mano (molino de vaivén)", Fecha:-9000},
+      {Invento:"Agricultura (domesticación de plantas)", Fecha:-8000},
+      {Invento:"Domesticación de animales", Fecha:-8000},
+      {Invento:"Arado primitivo", Fecha:-6000},
+      {Invento:"Irrigación", Fecha:-5500},
+      {Invento:"Arquitectura en adobe", Fecha:-5000},
+      {Invento:"Metalurgia del cobre", Fecha:-5000},
+      {Invento:"Rueda", Fecha:-3500},
+      {Invento:"Calendario lunar", Fecha:-3200},
+      {Invento:"Escritura cuneiforme", Fecha:-3200},
+      {Invento:"Horno de alfarero", Fecha:-3000},
+      {Invento:"Aserrado (sierras)", Fecha:-3000},
+      {Invento:"Velero (nave a vela)", Fecha:-3000},
+      {Invento:"Matemáticas básicas (aritmética)", Fecha:-3000},
+      {Invento:"Vidrio (fusión)", Fecha:-2500},
+      {Invento:"Aleación de bronce", Fecha:-2000},
+      {Invento:"Abaco", Fecha:-2000},
+      {Invento:"Palanca (formulación)", Fecha:-2000},
+      {Invento:"Bomba de cadena", Fecha:-2000},
+      {Invento:"Alfabetos fonéticos", Fecha:-1500},
+      {Invento:"Hierro forjado", Fecha:-1200},
+      {Invento:"Moneda acuñada", Fecha:-700},
+      {Invento:"Alcantarillado urbano", Fecha:-700},
+      {Invento:"Acueducto", Fecha:-300},
+      {Invento:"Tornillo de Arquímedes", Fecha:-250},
+      {Invento:"Cemento romano (opus caementicium)", Fecha:-200},
+      {Invento:"Brújula primitiva (lodestone)", Fecha:-100},
+      {Invento:"Seda (tejido refinado)", Fecha:-100},
+      {Invento:"Papel (China)", Fecha:-100},
+      {Invento:"Vidrio soplado", Fecha:-50},
+      {Invento:"Carreteras pavimentadas (romanas)", Fecha:-50},
+      {Invento:"Molino de agua harinero", Fecha:100},
+      {Invento:"Rueda hidráulica", Fecha:100},
+      {Invento:"Seismoscopio (Zhang Heng)", Fecha:132},
+      {Invento:"Imanes y brújula magnética", Fecha:200},
+      {Invento:"Papel moneda (China)", Fecha:806},
+      {Invento:"Pólvora (proto-formas)", Fecha:850},
+      {Invento:"Imprenta de bloques (China)", Fecha:868},
+      {Invento:"Polvo negro refinado", Fecha:1040},
+      {Invento:"Imprenta de tipos móviles (Bi Sheng)", Fecha:1040},
+      {Invento:"Ballesta de estribo", Fecha:1100},
+      {Invento:"Arquitectura gótica (arco ojival)", Fecha:1150},
+      {Invento:"Molino de viento europeo", Fecha:1180},
+      {Invento:"Compás magnético (navegación)", Fecha:1200},
+      {Invento:"Universidades medievales", Fecha:1200},
+      {Invento:"Gafas (anteojos)", Fecha:1280},
+      {Invento:"Reloj mecánico", Fecha:1300},
+      {Invento:"Cañón", Fecha:1320},
+      {Invento:"Banco moderno (letra de cambio)", Fecha:1400},
+      {Invento:"Mecha de artillería", Fecha:1400},
+      {Invento:"Carabela (vela latina)", Fecha:1400},
+      {Invento:"Armas de fuego portátiles", Fecha:1400},
+      {Invento:"Perspectiva lineal (técnica artística)", Fecha:1420},
+      {Invento:"Prensa de Gutenberg", Fecha:1450},
+      {Invento:"Contabilidad por partida doble", Fecha:1494},
+      {Invento:"Imprenta musical", Fecha:1501},
+      {Invento:"Microscopio óptico", Fecha:1590},
+      {Invento:"Termómetro (Galileo)", Fecha:1593},
+      {Invento:"Telescopio", Fecha:1608},
+      {Invento:"Método científico formalizado", Fecha:1620},
+      {Invento:"Teoría de la circulación sanguínea (Harvey)", Fecha:1628},
+      {Invento:"Calculadora mecánica (Pascalina)", Fecha:1642},
+      {Invento:"Barómetro (Torricelli)", Fecha:1643},
+      {Invento:"Bomba de vacío (Guericke)", Fecha:1650},
+      {Invento:"Reloj de péndulo (Huygens)", Fecha:1656},
+      {Invento:"Máquina de vapor (Papin prototipo)", Fecha:1679},
+      {Invento:"Arado de vertedera", Fecha:1730},
+      {Invento:"Lente acromática", Fecha:1733},
+      {Invento:"Pararrayos (Franklin)", Fecha:1752},
+      {Invento:"Hiladora Spinning Jenny", Fecha:1764},
+      {Invento:"Máquina de vapor de Watt", Fecha:1769},
+      {Invento:"Telar mecánico (Cartwright)", Fecha:1785},
+      {Invento:"Trilladora mecánica", Fecha:1786},
+      {Invento:"Desmotadora de algodón", Fecha:1793},
+      {Invento:"Prensa hidráulica (Bramah)", Fecha:1795},
+      {Invento:"Litografía", Fecha:1796},
+      {Invento:"Vacuna contra la viruela (Jenner)", Fecha:1796},
+      {Invento:"Pila voltaica (batería)", Fecha:1800},
+      {Invento:"Locomotora de vapor", Fecha:1804},
+      {Invento:"Electrólisis (Davy)", Fecha:1807},
+      {Invento:"Gas de alumbrado", Fecha:1807},
+      {Invento:"Conservas (enlatado)", Fecha:1810},
+      {Invento:"Estetoscopio", Fecha:1816},
+      {Invento:"Ferrocarril de pasajeros", Fecha:1825},
+      {Invento:"Electroimán (Sturgeon)", Fecha:1825},
+      {Invento:"Puente colgante moderno", Fecha:1826},
+      {Invento:"Fotografía (Niepce)", Fecha:1826},
+      {Invento:"Impresión braille", Fecha:1829},
+      {Invento:"Leche en polvo", Fecha:1832},
+      {Invento:"Refrigeración por compresión", Fecha:1834},
+      {Invento:"Motor eléctrico (Faraday/Jacobi)", Fecha:1834},
+      {Invento:"Hélice naval", Fecha:1836},
+      {Invento:"Telégrafo (Morse)", Fecha:1837},
+      {Invento:"Caucho vulcanizado", Fecha:1839},
+      {Invento:"Pilas de combustible (Grove)", Fecha:1839},
+      {Invento:"Telefax", Fecha:1843},
+      {Invento:"Papel celulosa/madera", Fecha:1844},
+      {Invento:"Anestesia con éter", Fecha:1846},
+      {Invento:"Anestesia con cloroformo", Fecha:1847},
+      {Invento:"Péndulo de Foucault", Fecha:1851},
+      {Invento:"Máquina de coser (Singer)", Fecha:1851},
+      {Invento:"Ascensor de seguridad (Otis)", Fecha:1852},
+      {Invento:"Aguja hipodérmica", Fecha:1853},
+      {Invento:"Acero Bessemer", Fecha:1856},
+      {Invento:"Cerradura de cilindro (Yale)", Fecha:1861},
+      {Invento:"Pasteurización", Fecha:1863},
+      {Invento:"Metro (subterráneo)", Fecha:1863},
+      {Invento:"Dínamo (generador)", Fecha:1866},
+      {Invento:"Antisépticos (Lister)", Fecha:1867},
+      {Invento:"Dinamita", Fecha:1867},
+      {Invento:"Máquina de escribir", Fecha:1867},
+      {Invento:"Motor de combustión interna (Otto)", Fecha:1876},
+      {Invento:"Teléfono (Bell)", Fecha:1876},
+      {Invento:"Fonógrafo", Fecha:1877},
+      {Invento:"Fotograbado", Fecha:1878},
+      {Invento:"Bombilla incandescente", Fecha:1879},
+      {Invento:"Sismógrafo moderno", Fecha:1880},
+      {Invento:"Tranvía eléctrico", Fecha:1881},
+      {Invento:"Estructuras de acero", Fecha:1883},
+      {Invento:"Bicicleta de seguridad (cadena)", Fecha:1885},
+      {Invento:"Automóvil (Benz)", Fecha:1885},
+      {Invento:"Rascacielos con armazón de acero", Fecha:1885},
+      {Invento:"Turbina eólica (Blyth)", Fecha:1887},
+      {Invento:"Neumático inflable", Fecha:1888},
+      {Invento:"Cámara portátil (Kodak)", Fecha:1888},
+      {Invento:"Cinematógrafo (Lumière)", Fecha:1895},
+      {Invento:"Radio (Marconi)", Fecha:1895},
+      {Invento:"Rayos X", Fecha:1895},
+      {Invento:"Radioterapia", Fecha:1896},
+      {Invento:"Motor diésel", Fecha:1897},
+      {Invento:"Aspirina", Fecha:1899},
+      {Invento:"Hormigón armado moderno", Fecha:1900},
+      {Invento:"Dirigible rígido (Zeppelin)", Fecha:1900},
+      {Invento:"Aspiradora eléctrica", Fecha:1901},
+      {Invento:"Aire acondicionado (Carrier)", Fecha:1902},
+      {Invento:"Avión (Wright)", Fecha:1903},
+      {Invento:"Energía geotérmica moderna", Fecha:1904},
+      {Invento:"Impresión offset moderna", Fecha:1904},
+      {Invento:"Tractor", Fecha:1904},
+      {Invento:"Cambio de marchas (derailleur)", Fecha:1905},
+      {Invento:"Liofilización", Fecha:1906},
+      {Invento:"Teletipo", Fecha:1906},
+      {Invento:"Plástico baquelita", Fecha:1907},
+      {Invento:"Automóvil en cadena (Ford T)", Fecha:1908},
+      {Invento:"Fertilizantes sintéticos (Haber‑Bosch)", Fecha:1913},
+      {Invento:"Acero inoxidable", Fecha:1913},
+      {Invento:"Refrigeración doméstica", Fecha:1913},
+      {Invento:"Semáforo eléctrico", Fecha:1914},
+      {Invento:"OCR", Fecha:1914},
+      {Invento:"Tanque (carro de combate)", Fecha:1916},
+      {Invento:"Insulina (terapia)", Fecha:1922},
+      {Invento:"Bulldozer", Fecha:1923},
+      {Invento:"Tractor diésel", Fecha:1923},
+      {Invento:"Aerosoles (spray)", Fecha:1927},
+      {Invento:"Televisión mecánica", Fecha:1927},
+      {Invento:"Hormigón pretensado", Fecha:1928},
+      {Invento:"Penicilina (Fleming)", Fecha:1928},
+      {Invento:"Látex espumado (colchones)", Fecha:1929},
+      {Invento:"Vidrio templado", Fecha:1929},
+      {Invento:"Cinta adhesiva (Scotch)", Fecha:1930},
+      {Invento:"Doble acristalamiento", Fecha:1930},
+      {Invento:"Fibra de vidrio", Fecha:1932},
+      {Invento:"Acelerador de partículas (ciclotrón)", Fecha:1932},
+      {Invento:"Radar", Fecha:1935},
+      {Invento:"Nylon", Fecha:1935},
+      {Invento:"Nylon 6,6", Fecha:1935},
+      {Invento:"Fotocopiadora (xerografía)", Fecha:1938},
+      {Invento:"Teflón (PTFE)", Fecha:1938},
+      {Invento:"Helicóptero moderno", Fecha:1939},
+      {Invento:"Motor a reacción", Fecha:1939},
+      {Invento:"Filtros HEPA", Fecha:1940},
+      {Invento:"Computadora electromecánica (Zuse Z3)", Fecha:1941},
+      {Invento:"Energía nuclear (reactor)", Fecha:1942},
+      {Invento:"ENIAC (computador electrónico)", Fecha:1946},
+      {Invento:"Transistor", Fecha:1947},
+      {Invento:"Horno microondas", Fecha:1947},
+      {Invento:"Cámara Polaroid", Fecha:1948},
+      {Invento:"Invernadero moderno", Fecha:1950},
+      {Invento:"Ala delta", Fecha:1951},
+      {Invento:"Código de barras (idea/patente)", Fecha:1952},
+      {Invento:"CNC", Fecha:1952},
+      {Invento:"Tetra Pak", Fecha:1952},
+      {Invento:"Reactor de agua a presión (PWR)", Fecha:1953},
+      {Invento:"Frenos de disco", Fecha:1953},
+      {Invento:"Panel solar de silicio", Fecha:1954},
+      {Invento:"Velcro", Fecha:1955},
+      {Invento:"Vacuna polio (Salk)", Fecha:1955},
+      {Invento:"Hovercraft", Fecha:1955},
+      {Invento:"Cinta de velcro", Fecha:1955},
+      {Invento:"Endoscopia de fibra óptica", Fecha:1957},
+      {Invento:"Satélite artificial (Sputnik)", Fecha:1957},
+      {Invento:"Circuito integrado (microchip)", Fecha:1958},
+      {Invento:"Marcapasos", Fecha:1958},
+      {Invento:"Anticonceptivo DIU", Fecha:1959},
+      {Invento:"Riego por goteo", Fecha:1959},
+      {Invento:"Pila alcalina", Fecha:1959},
+      {Invento:"Cinturón de seguridad de tres puntos", Fecha:1959},
+      {Invento:"Cerámicas avanzadas (alúmina)", Fecha:1960},
+      {Invento:"Píldora anticonceptiva", Fecha:1960},
+      {Invento:"Láser", Fecha:1960},
+      {Invento:"Prótesis mioeléctrica", Fecha:1960},
+      {Invento:"Satélite meteorológico", Fecha:1960},
+      {Invento:"Fotolitografía", Fecha:1960},
+      {Invento:"SCADA", Fecha:1960},
+      {Invento:"Pilas de hidrógeno PEM", Fecha:1960},
+      {Invento:"Nave espacial tripulada (Vostok 1)", Fecha:1961},
+      {Invento:"LED", Fecha:1962},
+      {Invento:"Prótesis de cadera moderna", Fecha:1962},
+      {Invento:"Fibra de carbono", Fecha:1963},
+      {Invento:"ASCII", Fecha:1963},
+      {Invento:"CAD (Sketchpad)", Fecha:1963},
+      {Invento:"Tren bala (Shinkansen)", Fecha:1964},
+      {Invento:"Mouse de computadora", Fecha:1964},
+      {Invento:"Kevlar", Fecha:1965},
+      {Invento:"Detector de humo", Fecha:1965},
+      {Invento:"Fibra óptica", Fecha:1966},
+      {Invento:"Microondas doméstico", Fecha:1967},
+      {Invento:"PLC (controlador lógico programable)", Fecha:1968},
+      {Invento:"Cámara de vídeo (CCD)", Fecha:1969},
+      {Invento:"ARPANET (precursor de Internet)", Fecha:1969},
+      {Invento:"Fotografía digital (CCD)", Fecha:1969},
+      {Invento:"Ascensor de alta velocidad", Fecha:1969},
+      {Invento:"CAM", Fecha:1970},
+      {Invento:"Relational DBMS", Fecha:1970},
+      {Invento:"Detector de CO", Fecha:1970},
+      {Invento:"Correo electrónico (email)", Fecha:1971},
+      {Invento:"Airbag", Fecha:1971},
+      {Invento:"Tomografía computarizada (CT)", Fecha:1971},
+      {Invento:"Microprocesador (Intel 4004)", Fecha:1971},
+      {Invento:"Lenguaje C", Fecha:1972},
+      {Invento:"Videoconsola (Magnavox Odyssey)", Fecha:1972},
+      {Invento:"Teléfono móvil (prototipo)", Fecha:1973},
+      {Invento:"Ethernet", Fecha:1973},
+      {Invento:"TCP/IP", Fecha:1974},
+      {Invento:"Post-it", Fecha:1974},
+      {Invento:"SQL", Fecha:1974},
+      {Invento:"Domótica (protocolos X10)", Fecha:1975},
+      {Invento:"Cámara digital", Fecha:1975},
+      {Invento:"Resonancia magnética (MRI)", Fecha:1977},
+      {Invento:"Criptografía RSA", Fecha:1977},
+      {Invento:"Secuenciación Sanger", Fecha:1977},
+      {Invento:"GPS (NAVSTAR)", Fecha:1978},
+      {Invento:"ABS (frenos antibloqueo)", Fecha:1978},
+      {Invento:"Walkman", Fecha:1979},
+      {Invento:"Purificador de aire doméstico", Fecha:1980},
+      {Invento:"Aislamiento sísmico (base aislada)", Fecha:1980},
+      {Invento:"Desfibrilador implantable (DAI)", Fecha:1980},
+      {Invento:"CMOS VLSI", Fecha:1980},
+      {Invento:"MEMS", Fecha:1980},
+      {Invento:"Laparoscopia", Fecha:1980},
+      {Invento:"Router", Fecha:1981},
+      {Invento:"CD (disco compacto)", Fecha:1982},
+      {Invento:"SMTP", Fecha:1982},
+      {Invento:"Microfinanzas modernas", Fecha:1983},
+      {Invento:"PCR", Fecha:1983},
+      {Invento:"DNS", Fecha:1983},
+      {Invento:"POP3", Fecha:1984},
+      {Invento:"Maglev", Fecha:1984},
+      {Invento:"LaTeX", Fecha:1984},
+      {Invento:"Impresora 3D (SLA)", Fecha:1986},
+      {Invento:"Stent coronario", Fecha:1986},
+      {Invento:"IMAP", Fecha:1986},
+      {Invento:"Superconductividad de alta Tc", Fecha:1986},
+      {Invento:"OLED", Fecha:1987},
+      {Invento:"RAID", Fecha:1988},
+      {Invento:"SSD (flash NAND)", Fecha:1989},
+      {Invento:"WWW (Tim Berners-Lee)", Fecha:1989},
+      {Invento:"Batería de ion‑litio", Fecha:1991},
+      {Invento:"HTML", Fecha:1991},
+      {Invento:"Python", Fecha:1991},
+      {Invento:"Linux (kernel)", Fecha:1991},
+      {Invento:"Unicode", Fecha:1991},
+      {Invento:"JPEG", Fecha:1992},
+      {Invento:"UTF‑8", Fecha:1992},
+      {Invento:"PDF (Adobe)", Fecha:1993},
+      {Invento:"Navegador web (Mosaic)", Fecha:1993},
+      {Invento:"MP3 (MPEG‑1 Layer III)", Fecha:1993},
+      {Invento:"Código QR", Fecha:1994},
+      {Invento:"Bluetooth", Fecha:1994},
+      {Invento:"Navegador web (Netscape)", Fecha:1994},
+      {Invento:"HTTPS", Fecha:1994},
+      {Invento:"Chip EMV", Fecha:1994},
+      {Invento:"Impresión 3D metálica (SLM)", Fecha:1995},
+      {Invento:"Java", Fecha:1995},
+      {Invento:"SSL/TLS", Fecha:1995},
+      {Invento:"E‑commerce (Amazon)", Fecha:1995},
+      {Invento:"SSH", Fecha:1995},
+      {Invento:"Machine Learning (SVM)", Fecha:1995},
+      {Invento:"Email comercial (Hotmail)", Fecha:1996},
+      {Invento:"USB", Fecha:1996},
+      {Invento:"LED de luz blanca", Fecha:1996},
+      {Invento:"CSS", Fecha:1996},
+      {Invento:"Coche híbrido (Prius)", Fecha:1997},
+      {Invento:"Wi‑Fi (802.11)", Fecha:1997},
+      {Invento:"SFTP", Fecha:1997},
+      {Invento:"Buscador web (Google)", Fecha:1998},
+      {Invento:"NoSQL (conceptos)", Fecha:1998},
+      {Invento:"MPEG‑4", Fecha:1998},
+      {Invento:"XML", Fecha:1998},
+      {Invento:"SMTP Auth", Fecha:1999},
+      {Invento:"IoT", Fecha:1999},
+      {Invento:"Virtualización (VMware)", Fecha:1999},
+      {Invento:"REST", Fecha:2000},
+      {Invento:"GPS civil abierto", Fecha:2000},
+      {Invento:"JSON", Fecha:2001},
+      {Invento:"YAML", Fecha:2001},
+      {Invento:"3G", Fecha:2001},
+      {Invento:"Random Forests", Fecha:2001},
+      {Invento:"Streaming musical", Fecha:2001},
+      {Invento:"Roomba (robot doméstico)", Fecha:2002},
+      {Invento:"Pagos sin contacto (NFC)", Fecha:2003},
+      {Invento:"Videollamadas (Skype)", Fecha:2003},
+      {Invento:"Web 2.0", Fecha:2004},
+      {Invento:"Cámara GoPro", Fecha:2004},
+      {Invento:"Contactless EMV", Fecha:2004},
+      {Invento:"Redes sociales (Facebook)", Fecha:2004},
+      {Invento:"Webmail (Gmail)", Fecha:2004},
+      {Invento:"Podcast", Fecha:2004},
+      {Invento:"Grafeno (aislamiento)", Fecha:2004},
+      {Invento:"Secuenciación de nueva generación", Fecha:2005},
+      {Invento:"Git", Fecha:2005},
+      {Invento:"Streaming de video (YouTube)", Fecha:2005},
+      {Invento:"Servicios en la nube (AWS)", Fecha:2006},
+      {Invento:"Células madre pluripotentes inducidas (iPS)", Fecha:2006},
+      {Invento:"Banca móvil", Fecha:2007},
+      {Invento:"E‑book (lector dedicado)", Fecha:2007},
+      {Invento:"Smartphone (iPhone)", Fecha:2007},
+      {Invento:"Termostato programable", Fecha:2007},
+      {Invento:"Contador inteligente", Fecha:2007},
+      {Invento:"Vehículo eléctrico moderno (Tesla Roadster)", Fecha:2008},
+      {Invento:"GitHub", Fecha:2008},
+      {Invento:"SEPA", Fecha:2008},
+      {Invento:"Blockchain (Bitcoin paper)", Fecha:2008},
+      {Invento:"Smart grid", Fecha:2009},
+      {Invento:"Videoconferencia HD", Fecha:2009},
+      {Invento:"4G LTE", Fecha:2009},
+      {Invento:"Perovskitas fotovoltaicas", Fecha:2009},
+      {Invento:"Velas fotovoltaicas (nave solar)", Fecha:2010},
+      {Invento:"OAuth", Fecha:2010},
+      {Invento:"Drone cuadricóptero", Fecha:2010},
+      {Invento:"Tablet (iPad)", Fecha:2010},
+      {Invento:"Cadera impresa en 3D", Fecha:2010},
+      {Invento:"Exoesqueletos", Fecha:2010},
+      {Invento:"WebRTC", Fecha:2011},
+      {Invento:"CI/CD (Jenkins)", Fecha:2011},
+      {Invento:"SSD NVMe", Fecha:2011},
+      {Invento:"MOOC", Fecha:2011},
+      {Invento:"Asistentes de voz (Siri/Alexa)", Fecha:2011},
+      {Invento:"Deep learning (redes profundas, boom)", Fecha:2012},
+      {Invento:"Terapia CAR‑T", Fecha:2012},
+      {Invento:"Realidad virtual moderna (Oculus)", Fecha:2012},
+      {Invento:"CRISPR-Cas9 (edición genética)", Fecha:2012},
+      {Invento:"Contenedores (Docker)", Fecha:2013},
+      {Invento:"GAFAs inteligente (Google Glass)", Fecha:2013},
+      {Invento:"Zoom", Fecha:2013},
+      {Invento:"Drones civiles", Fecha:2013},
+      {Invento:"Impresión 3D biológica (bioink)", Fecha:2013},
+      {Invento:"Edge computing", Fecha:2014},
+      {Invento:"Kubernetes", Fecha:2014},
+      {Invento:"Impresión 3D en construcción", Fecha:2014},
+      {Invento:"Bicimad (bike sharing moderno)", Fecha:2014},
+      {Invento:"GANs", Fecha:2014},
+      {Invento:"Smartwatch", Fecha:2015},
+      {Invento:"Nave espacial reutilizable (Falcon 9)", Fecha:2015},
+      {Invento:"Realidad aumentada (HoloLens)", Fecha:2015},
+      {Invento:"Aprendizaje por refuerzo profundo (AlphaGo)", Fecha:2016},
+      {Invento:"CRISPR diagnóstico (SHERLOCK)", Fecha:2017},
+      {Invento:"Transformers", Fecha:2017},
+      {Invento:"BERT", Fecha:2018},
+      {Invento:"Modelos de lenguaje a gran escala", Fecha:2018},
+      {Invento:"TLS 1.3", Fecha:2018},
+      {Invento:"Batería de estado sólido (prototipos)", Fecha:2018},
+      {Invento:"5G", Fecha:2019},
+      {Invento:"QRIS (pagos QR)", Fecha:2019},
+      {Invento:"EUV Lithography", Fecha:2019},
+      {Invento:"mRNA vacuna (COVID‑19)", Fecha:2020},
+      {Invento:"Telemedicina a gran escala", Fecha:2020},
+      {Invento:"Diffusion models", Fecha:2020},
+      {Invento:"QR de pasaporte sanitario", Fecha:2021}
+    ];
+
+    function setData(arr){
+      // Validación y normalización: convertir fechas a número por si vinieran como string
+      data = arr.map(r=>({
+        Invento: String(r.Invento),
+        Fecha: typeof r.Fecha === 'number' ? r.Fecha : parseFloat(String(r.Fecha).replace('−','-').replace(/[^0-9\-\.]/g,''))
+      }))
+      .filter(r=>!Number.isNaN(r.Fecha))
+      .sort((a,b)=>a.Fecha-b.Fecha);
+      computeDelta10(data);
+      slider.min = 1;
+      slider.max = data.length || 1;
+      // Mostrar totales inmediatamente
+      totalEl.textContent = data.length;
+      render(1);
+      // Mensaje en consola por si algo se descarta
+      const dropped = arr.length - data.length;
+      if(dropped>0){
+        console.warn(`Se descartaron ${dropped} filas por fecha no numérica.`);
+      }
+    }
+
+    setData(sample);
+  </script>
+</body>
+</html>

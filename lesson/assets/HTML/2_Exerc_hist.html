@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Economic History Drag and Drop Exercise</title>
+  <style>
+    body, h1 {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    .items {
+      margin-bottom: 20px;
+      border: 2px dashed #ccc;
+      padding: 10px;
+      min-height: 50px;
+    }
+    .column {
+      width: 18%;
+      min-height: 200px;
+      border: 2px solid #ccc;
+      margin: 0 1%;
+      display: inline-block;
+      vertical-align: top;
+      padding: 10px;
+    }
+    .column h2 {
+      color: #333;
+      margin-top: 0;
+    }
+    .draggable {
+      padding: 8px;
+      margin: 6px;
+      background-color: #f4f4f4;
+      border: 1px solid #ddd;
+      cursor: pointer;
+    }
+    .correct {
+      background-color: #c8e6c9; /* green */
+    }
+    .incorrect {
+      background-color: #ffcdd2; /* red */
+    }
+    #navigation {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Economic History Drag and Drop Exercise</h1>
+  <div id="items" class="items">
+    <!-- Items will be populated by JavaScript -->
+  </div>
+  <div class="columns">
+    <div id="1870-1913" class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <h2>1870–1913</h2>
+    </div>
+    <div id="1914-1950" class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <h2>1914–1950</h2>
+    </div>
+    <div id="1950-1973" class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <h2>1950–1973</h2>
+    </div>
+    <div id="1974-Present" class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <h2>1974–Present</h2>
+    </div>
+  </div>
+  <div id="navigation">
+    <button onclick="changeSet(-1)">Previous</button>
+    <button onclick="changeSet(1)">Next</button>
+  </div>
+
+  <script>
+    // Global variable for items
+    let items = [];
+    let currentIndex = 0;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      items = [
+        { text: "Gold Standard", period: "1870-1913" },
+        { text: "Failed Attempt to Return to Gold Standard", period: "1914-1950" },
+        { text: "Lack of International Collaboration", period: "1914-1950" },
+        { text: "Market rigidities", period: "1914-1950" },
+        { text: "Adjustable Exchange Rate", period: "1950-1973" },
+        { text: "The End of Cosmopolitanism", period: "1870-1913" },
+        { text: "Great depression", period: "1914-1950" },
+        { text: "The Golden Age", period: "1950-1973" },
+        { text: "Global Capitalism", period: "1974-Present" },
+        { text: "Europe (UK), America, Colonies", period: "1870-1913" },
+        { text: "Russia", period: "1914-1950" },
+        { text: "USA, Japan", period: "1950-1973" },
+        { text: "China", period: "1974-Present" },
+        { text: "Floating Exchange Rates", period: "1974-Present" },
+        { text: "Fixed Exchange Rates", period: "1870-1913" },
+        { text: "Failed Attempt to Return to Gold Standard", period: "1914-1950" },
+        { text: "Crisis; Stagnation", period: "1974-Present" }
+      ];
+
+      displayItems();
+    });
+
+    // Function to return a safe ID (remove non-alphanumeric characters)
+    function getSafeId(text) {
+      return text.replace(/[^a-zA-Z0-9]/g, "");
+    }
+
+    function displayItems() {
+      const itemsContainer = document.getElementById('items');
+      itemsContainer.innerHTML = ''; // Clear previous items
+      for (let i = currentIndex; i < currentIndex + 4 && i < items.length; i++) {
+        const div = document.createElement('div');
+        div.textContent = items[i].text;
+        let safeId = getSafeId(items[i].text);
+        div.setAttribute('draggable', true);
+        div.setAttribute('id', safeId);
+        div.classList.add('draggable');
+        div.addEventListener('dragstart', function(event) {
+          event.dataTransfer.setData("text", event.target.id);
+        });
+        itemsContainer.appendChild(div);
+      }
+    }
+
+    function changeSet(direction) {
+      currentIndex += direction * 4;
+      if (currentIndex < 0) currentIndex = 0;
+      if (currentIndex > items.length - 4) currentIndex = items.length - 4;
+      resetColumns();
+      displayItems();
+    }
+
+    // Reset columns to only contain their header.
+    function resetColumns() {
+      const columns = document.querySelectorAll('.column');
+      columns.forEach(column => {
+        const headerHTML = column.querySelector('h2').outerHTML;
+        column.innerHTML = headerHTML;
+      });
+    }
+
+    function allowDrop(event) {
+      event.preventDefault();
+    }
+
+    function drop(event) {
+      event.preventDefault();
+      var data = event.dataTransfer.getData("text");
+      var element = document.getElementById(data);
+      // Get the target column ID either directly or via the closest column element.
+      var targetColumn = event.target.getAttribute('id') || event.target.closest('.column').getAttribute('id');
+      
+      // Determine correctness by comparing the dragged item's period with the target column.
+      const draggedItem = items.find(item => getSafeId(item.text) === data);
+      let isCorrect = draggedItem && draggedItem.period === targetColumn;
+      
+      if (isCorrect) {
+        element.classList.add('correct');
+        element.classList.remove('incorrect');
+      } else {
+        element.classList.add('incorrect');
+        element.classList.remove('correct');
+      }
+
+      // Append the element if not already present in the target column.
+      let columnDiv = event.target.className.includes('column') ? event.target : event.target.closest('.column');
+      if (columnDiv && !columnDiv.querySelector(`#${data}`)) {
+        columnDiv.appendChild(element);
+      }
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+

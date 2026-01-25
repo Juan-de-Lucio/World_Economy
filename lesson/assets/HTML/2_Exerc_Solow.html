@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solow Growth Model Visualization with Technology and Equilibrium Line</title>
+  <!-- Chart.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js Annotation plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.1.0"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    #dashboard {
+      width: 90%;
+      margin: auto;
+    }
+    canvas {
+      max-width: 1000px;
+      height: 600px !important;
+      margin: 20px auto;
+    }
+    .slider-container {
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Solow Growth Model</h2>
+  
+  <div class="slider-container">
+    <label for="alpha">Capital Share (α):</label>
+    <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.3" oninput="updateLabel('alphaLabel', this.value)">
+    <span id="alphaLabel">0.30</span>
+  </div>
+  
+  <div class="slider-container">
+    <label for="savings">Savings Rate (s):</label>
+    <input type="range" id="savings" min="0" max="1" step="0.01" value="0.2" oninput="updateLabel('savingsLabel', this.value)">
+    <span id="savingsLabel">0.20</span>
+  </div>
+  
+  <div class="slider-container">
+    <label for="depreciation">Deprec. Rate + Pop. Growth (δ+n):</label>
+    <input type="range" id="depreciation" min="0" max="1" step="0.01" value="0.1" oninput="updateLabel('depreciationLabel', this.value)">
+    <span id="depreciationLabel">0.10</span>
+  </div>
+  
+  <div class="slider-container">
+    <label for="technology">Technology (A):</label>
+    <input type="range" id="technology" min="0.5" max="2" step="0.01" value="1" oninput="updateLabel('technologyLabel', this.value)">
+    <span id="technologyLabel">1.00</span>
+  </div>
+  
+  <div id="dashboard">
+      <canvas id="chart"></canvas>
+  </div>
+
+  <script>
+    function updateLabel(id, value) {
+      document.getElementById(id).innerText = parseFloat(value).toFixed(2);
+      plotSolowModel();
+    }
+
+    // Production function with technology: y = A * k^α
+    function solowProductionFunction(k, alpha, A) {
+      return A * Math.pow(k, alpha);
+    }
+
+    function savingsFunction(k, alpha, s, A) {
+      return s * solowProductionFunction(k, alpha, A);
+    }
+
+    function depreciationFunction(k, delta) {
+      return delta * k;
+    }
+
+    // Steady state: k* = (s*A/δ)^(1/(1-α))
+    function findSteadyState(s, delta, alpha, A) {
+      return Math.pow((s * A) / delta, 1 / (1 - alpha));
+    }
+
+    function plotSolowModel() {
+      const alpha = parseFloat(document.getElementById("alpha").value);
+      const s = parseFloat(document.getElementById("savings").value);
+      const delta = parseFloat(document.getElementById("depreciation").value);
+      const A = parseFloat(document.getElementById("technology").value);
+      
+      let productionPoints = [];
+      let savingsPoints = [];
+      let depreciationPoints = [];
+      
+      // Generate points for k from 0 to 10 in steps of 0.1:
+      for (let k = 0; k <= 10; k += 0.1) {
+        productionPoints.push({ x: k, y: solowProductionFunction(k, alpha, A) });
+        savingsPoints.push({ x: k, y: savingsFunction(k, alpha, s, A) });
+        depreciationPoints.push({ x: k, y: depreciationFunction(k, delta) });
+      }
+
+      const steadyStateK = findSteadyState(s, delta, alpha, A);
+
+      createChart(productionPoints, savingsPoints, depreciationPoints, steadyStateK);
+    }
+
+    function createChart(productionPoints, savingsPoints, depreciationPoints, steadyStateK) {
+      const ctx = document.getElementById('chart').getContext('2d');
+      if (window.myChart) {
+        window.myChart.destroy();
+      }
+      window.myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [
+            {
+              label: "Production Function y = A·k^α",
+              data: productionPoints,
+              borderColor: 'blue',
+              fill: false,
+              tension: 0.1
+            },
+            {
+              label: "Savings Function s·A·k^α",
+              data: savingsPoints,
+              borderColor: 'green',
+              fill: false,
+              tension: 0.1
+            },
+            {
+              label: "Depreciation+Pop growth (δ+n)k",
+              data: depreciationPoints,
+              borderColor: 'red',
+              fill: false,
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          parsing: false,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              title: {
+                display: true,
+                text: 'Capital per Worker (k)'
+              },
+              min: 0,
+              max: 10
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Output, Savings, Depreciation'
+              }
+            }
+          },
+          plugins: {
+            annotation: {
+              annotations: {
+                steadyLine: {
+                  type: 'line',
+                  xMin: steadyStateK,
+                  xMax: steadyStateK,
+                  borderColor: 'black',
+                  borderWidth: 2,
+                  label: {
+                    content: 'Equilibrium k*',
+                    enabled: true,
+                    position: 'start'
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    window.onload = plotSolowModel;
+  </script>
+
+</body>
+</html>
+
+
+
+
+
+

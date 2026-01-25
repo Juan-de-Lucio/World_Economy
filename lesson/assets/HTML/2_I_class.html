@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Income Level Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        table { width: 90%; margin: auto; border-collapse: collapse; font-size: 1.1em; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        .high { background-color: #d4edda; }  /* Light Green */
+        .upper-middle { background-color: #fff3cd; }  /* Light Yellow */
+        .lower-middle { background-color: #cce5ff; }  /* Light Blue */
+        .low { background-color: #f8d7da; }  /* Light Red */
+    </style>
+</head>
+<body>
+
+    <h2>Income Level Classification</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Deno</th>
+                <th>Nº Count</th>
+                <th>Population (%)</th>
+                <th>GDP (%)</th>
+                <th>GDP (PPP) (%)</th>
+                <th>Tranche (Income Range USD)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="high">
+                <td>High</td>
+                <td>81</td>
+                <td>17</td>
+                <td>64</td>
+                <td>46</td>
+                <td>&gt; 10,000</td>
+            </tr>
+            <tr class="upper-middle">
+                <td>Upper Middle</td>
+                <td>56</td>
+                <td>34</td>
+                <td>27</td>
+                <td>36</td>
+                <td>4,000 - 10,000</td>
+            </tr>
+            <tr class="lower-middle">
+                <td>Lower Middle</td>
+                <td>47</td>
+                <td>39</td>
+                <td>8</td>
+                <td>17</td>
+                <td>1,000 - 4,000</td>
+            </tr>
+            <tr class="low">
+                <td>Low</td>
+                <td>38</td>
+                <td>10</td>
+                <td>1</td>
+                <td>1</td>
+                <td>&lt; 1,000</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>
+

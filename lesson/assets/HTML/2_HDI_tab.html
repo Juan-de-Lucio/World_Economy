@@ -1,0 +1,46 @@
+<table border="1">
+    <thead>
+        <tr>
+            <th>Index</th>
+            <th>Formula</th>
+            <th>Minimum Value</th>
+            <th>Maximum Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Health Index</strong></td>
+            <td>I<sub>Health</sub> = (LE - 20) / (85 - 20)</td>
+            <td>20 years (life expectancy)</td>
+            <td>85 years (life expectancy)</td>
+        </tr>
+        <tr>
+            <td><strong>Mean Years of Schooling Index</strong></td>
+            <td>I<sub>MYS</sub> = MYS / 15</td>
+            <td>0 years</td>
+            <td>15 years</td>
+        </tr>
+        <tr>
+            <td><strong>Expected Years of Schooling Index</strong></td>
+            <td>I<sub>EYS</sub> = EYS / 18</td>
+            <td>0 years</td>
+            <td>18 years</td>
+        </tr>
+        <tr>
+            <td><strong>Education Index</strong></td>
+            <td colspan="3">I<sub>Education</sub> = (I<sub>MYS</sub> + I<sub>EYS</sub>) / 2 </td>
+        </tr>
+        <tr>
+            <td><strong>Income Index</strong></td>
+            <td>I<sub>Income</sub> = (ln(GNIpc) - ln(100)) / (ln(75000) - ln(100))</td>
+            <td>$100 GNI per capita (PPP)</td>
+            <td>$75,000 GNI per capita (PPP)</td>
+        </tr>
+        <tr>
+            <td><strong>Final HDI</strong></td>
+            <td colspan="3">HDI = (I<sub>Health</sub> × I<sub>Education</sub> × I<sub>Income</sub>)<sup>1/3</sup></td>
+        </tr>
+    </tbody>
+</table>
+
+

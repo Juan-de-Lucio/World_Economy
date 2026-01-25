@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solow Growth Model</title>
+    <script type="text/javascript" async
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+
+    <style>
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        p {font-size: 1.1em;}
+        ul {margin-left: 15px;}
+        .equation {
+            background-color: #ffeb3b;
+            padding: 15px;
+            border-radius: 5px;
+            border: 2px solid #000;
+            display: inline-block;
+            font-weight: bold;
+        }
+    </style>
+
+
+
+
+</head>
+
+
+
+
+
+
+
+    <h2>Key Components</h2>
+    <ul>
+      <li>
+        <strong>Production Function:</strong> The model typically employs a production function of the form <em>Y = F(K, L)</em>, where <em>Y</em> is total output, <em>K</em> is the capital stock, and <em>L</em> represents labor. A common specification is the Cobb-Douglas function: <em>Y = A·K<sup>α</sup>·L<sup>1-α</sup></em>, where <em>A</em> denotes total factor productivity.
+      </li>
+      <li>
+        <strong>Capital Accumulation:</strong> The evolution of the capital stock over time is given by the equation <em>ΔK = I - δK</em>, where <em>I</em> is investment and <em>δ</em> represents the depreciation rate.
+      </li>
+      <li>
+        <strong>Labor Growth:</strong> The labor force grows at a constant rate, <em>n</em>, which expands the scale of production.
+      </li>
+      <li>
+        <strong>Technological Progress:</strong> Often modeled as an exogenous factor, technological progress (growth in <em>A</em>) enhances productivity and is crucial for sustained long-run growth.
+      </li>
+    </ul>
+    
+    <h2>Steady State and Convergence</h2>
+    <p>
+      The model predicts that economies tend to converge toward a steady-state equilibrium, where capital per worker and output per worker remain constant over time. In this steady state, net investment (investment minus depreciation) exactly offsets the dilution of capital caused by labor force growth.
+    </p>
+    <p>
+      Differences in saving rates, population growth, and technological progress help explain variations in income levels across countries.
+    </p>
+    
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+    <h1>Mathematics of the Solow Growth Model</h1>
+    
+    <h2>1. Production Function</h2>
+    <p>
+      The Solow Growth Model starts with a neoclassical production function, typically specified in Cobb-Douglas form:
+    </p>
+      $$Y = A\, K^\alpha\, L^{1-\alpha}$$
+    <p>
+      where:
+    </p>
+    <ul>
+      <li>\(Y\) is the total output,</li>
+      <li>\(K\) is the capital stock,</li>
+      <li>\(L\) is the labor force,</li>
+      <li>\(A\) represents total factor productivity (technology),</li>
+      <li>\(\alpha\) is the capital share parameter, with \(0 < \alpha < 1\).</li>
+    </ul>
+
+    <p>Per Capita Terms</p>
+    <p>
+      Defining capital per worker and output per worker as:
+    </p>
+    <p>
+      $$k = \frac{K}{L}, \quad y = \frac{Y}{L}$$
+    </p>
+<p>
+      the per capita production function becomes:
+    </p>    
+
+    <p>
+      $$y = A\, k^\alpha$$
+    </p>
+
+    
+    <h2>2. Capital Accumulation</h2>
+    <p>
+      The change in the capital stock over time is given by:
+    </p>
+    <p>
+      $$\frac{dK}{dt} = sY - \delta K$$
+    </p>
+    <p>
+      where:
+    </p>
+    <ul>
+      <li>\(s\) is the saving rate (S=I),</li>
+      <li>\(\delta\) is the depreciation rate of capital.</li>
+    </ul>
+    <p>
+        \[
+        \frac{dK}{dt} = sA k^\alpha L - \delta K
+        \]
+    </p>
+    
+    
+    <h2>3. Dynamics of Capital per Worker</h2>
+
+
+
+    <p>To find the evolution of \( k \) over time, we take the time derivative:</p>
+    
+    <p>\[ \frac{d}{dt} k = \frac{d}{dt} \left( \frac{K}{L} \right) \]</p>
+    
+
+
+        <p>Applying the Quotient Rule:</p>
+        <p>
+            \[
+            \frac{dk}{dt} = \frac{\frac{dK}{dt} L -  \frac{dL}{dt} K}{L^2}
+            \]
+        </p>
+
+        <p>Dividing both numerator terms by \( L \):</p>
+        <p>
+        \[\frac{dk}{dt} = \frac{1}{L} \frac{dK}{dt} - \frac{K}{L} \cdot \frac{1}{L} \frac{dL}{dt}\]
+     \[\frac{dk}{dt} L =  \frac{dK}{dt} - K n\]
+     \[ \frac{dk}{dt} L + K n =  \frac{dK}{dt} \]
+        </p>
+
+
+
+    
+    <p>where:</p>
+    <ul>
+        <li>\( \frac{\dot{K}}{K} \) is the growth rate of capital.</li>
+        <li>\( \frac{\dot{L}}{L} = n \) is the population growth rate.</li>
+        <li>\( \frac{\dot{k}}{k} \) is the growth rate of capital per worker.</li>
+    </ul>
+    
+    <p>Rearranging:</p>
+    <p>
+\[ \frac{dk}{dt} L + K n =  \frac{dK}{dt} = sA k^\alpha L - \delta K\]
+\[ \frac{dk}{dt}  + k n = sA k^\alpha  - \delta k \]
+\[ \frac{dk}{dt}   = sA k^\alpha  - (\delta + n) k \]
+\[ \frac{dk}{dt} / k  = sA k^{\alpha-1}  - (\delta + n) \]
+       </p> 
+
+
+
+
+
+
+    <p>
+      The evolution of capital per worker is described by:
+    </p>
+    <p">
+      $$ \dot{k} = \frac{dk}{dt} = sA\, k^\alpha - (n + \delta)k$$
+    </p>
+    <p>
+      Here:
+    </p>
+    <ul>
+      <li>\(sA\, k^\alpha\) represents investment per worker,</li>
+      <li>\((n + \delta)k\) captures the effective depreciation of capital per worker due to both physical depreciation and the dilution effect from labor force growth.</li>
+
+<li> Capital dilution, which consists of: The effect of population growth and Capital depreciation (some capital wears out over time)
+</li>
+
+
+
+    </ul>
+
+
+
+    
+    <h2>4. Steady State</h2>
+    <p>
+      The steady state is reached when the capital per worker no longer changes over time, i.e., \(\frac{dk}{dt} = 0\):
+    </p>
+    <div class="equation">
+      $$sA\, k^\alpha = (n + \delta)k$$
+    </div>
+    <p>
+      Dividing both sides by \(k\) (assuming \(k > 0\)) gives:
+    </p>
+    <div class="equation">
+      $$sA\, k^{\alpha-1} = n + \delta$$
+    </div>
+    <p>
+      Solving for the steady state level of capital per worker, \(k^*\), we have:
+    </p>
+    <p>
+      $$k^* = \left(\frac{sA}{n + \delta}\right)^{\frac{1}{1-\alpha}}$$
+    </p>
+    
+    <p>
+      Using the per capita production function, the steady state output per worker is:
+    </p>
+    <p>
+      $$y^* = A\,(k^*)^\alpha = A \left(\frac{sA}{n + \delta}\right)^{\frac{\alpha}{1-\alpha}}$$
+    </p>
+    
+    <h2>Implications</h2>
+    <p>
+      The Solow Growth Model demonstrates that in the long run:
+    </p>
+    <ul>
+      <li>Per capita output is determined by the rates of saving, depreciation, and labor force growth, as well as the level of technology.</li>
+      <li>Capital accumulation exhibits diminishing returns, so long-run growth in output per worker is driven solely by technological progress.</li>
+      <li>Economies converge to a steady state where net investment is just enough to offset depreciation and dilution from population growth.</li>
+      <li>
+        Higher saving rates lead to a higher steady-state level of output per worker but do not affect the long-term growth rate.
+      </li>
+      <li>
+        Economies with lower initial capital per worker may experience faster growth until they converge to their steady state, assuming similar rates of technological progress.
+      </li>
+    </ul>
+
+
+
