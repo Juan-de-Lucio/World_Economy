@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock and Flow Variables - Water Tank Exercise</title>
+    <script>
+        function calculateWaterLevel() {
+            let initialWater = parseFloat(document.getElementById("initialWater").value) || 0;
+            let rainwaterCollected = parseFloat(document.getElementById("rainwater").value) || 0;
+            let waterUsed = parseFloat(document.getElementById("waterUsed").value) || 0;
+            let maxCapacity = 250; // Tank's maximum capacity
+
+            let finalWater = initialWater + rainwaterCollected - waterUsed;
+            if (finalWater > maxCapacity) {
+                finalWater = maxCapacity;
+                document.getElementById("warning").innerText = "Warning: Excess water overflowed!";
+            } else {
+                document.getElementById("warning").innerText = "";
+            }
+
+            document.getElementById("finalWater").innerText = finalWater + " liters";
+        }
+    </script>
+</head>
+<body>
+    <h2>Stock and Flow Variables - Water Tank Exercise</h2>
+    <p><strong>Instructions:</strong> Enter the initial water in the tank, the amount of rainwater collected, and water used, then click Calculate.</p>
+    
+    <label for="initialWater">Initial Water in Tank (liters) - Initial  STOCK: </label>
+    <input type="number" id="initialWater" value="200"><br><br>
+    
+    <label for="rainwater">Rainwater Collected (liters) - in FLOW: </label>
+    <input type="number" id="rainwater" value="50"><br><br>
+    
+    <label for="waterUsed">Water Used for Plants (liters) - out FLOW: </label>
+    <input type="number" id="waterUsed" value="30"><br><br>
+    
+    <button onclick="calculateWaterLevel()">Calculate Final Water Level</button>
+    
+    <h3>Results:</h3>
+    <p>Final Water in Tank - new STOCK: <span id="finalWater">200 liters</span></p>
+    <p id="warning" style="color: red;"></p>
+</body>
+</html>

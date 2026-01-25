@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Value Added vs Production - Coffee Shop</title>
+    <script>
+        function getRandomValue(base, range) {
+            return (base + (Math.random() * range - range / 2)).toFixed(2);
+        }
+
+        function calculateValues() {
+            let coffeeBeans = parseFloat(getRandomValue(0.50, 0.10));
+            let milkSugar = parseFloat(getRandomValue(0.30, 0.10));
+            let labor = parseFloat(getRandomValue(1.00, 0.50));
+            let sellingPrice = parseFloat(getRandomValue(5.00, 1.00));
+
+            let totalProductionCost = coffeeBeans + milkSugar + labor;
+            let valueAdded = sellingPrice - (coffeeBeans + milkSugar + labor);
+
+            document.getElementById("coffeeBeans").innerText = "$" + coffeeBeans;
+            document.getElementById("milkSugar").innerText = "$" + milkSugar;
+            document.getElementById("labor").innerText = "$" + labor;
+            document.getElementById("sellingPrice").innerText = "$" + sellingPrice;
+            document.getElementById("productionValue").innerText = "$" + totalProductionCost.toFixed(2);
+            document.getElementById("valueAdded").innerText = "$" + valueAdded.toFixed(2);
+        }
+    </script>
+</head>
+<body>
+    <h2>Coffee Shop: Value Added vs Production</h2>
+    <p><strong>Cost Breakdown (randomized each time):</strong></p>
+    <ul>
+        <li>Coffee Beans: <span id="coffeeBeans">$0.00</span></li>
+        <li>Milk and Sugar: <span id="milkSugar">$0.00</span></li>
+        <li>Labor: <span id="labor">$0.00</span></li>
+        <li>Selling Price: <span id="sellingPrice">$0.00</span></li>
+    </ul>
+    <button onclick="calculateValues()">Calculate</button>
+    <h3>Results:</h3>
+    <p>Intermediate consumption: <span id="productionValue">$0.00</span></p>
+    <p>Value Added: <span id="valueAdded">$0.00</span></p>
+</body>
+</html>

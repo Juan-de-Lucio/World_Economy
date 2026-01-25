@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-family: Arial, sans-serif;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            text-align: center;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Quantity</th>
+                <th>Interann.</th>
+                <th>t to t+2</th>
+                <th>Cumulative</th>
+                <th>Index</th>
+                <th>Prices</th>
+                <th>Nominal</th>
+                <th>Deflator</th>
+                <th>Inflation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>t</td>
+                <td>50</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>100</td>
+                <td>1</td>
+                <td>50</td>
+                <td>100</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>t+1</td>
+                <td>51</td>
+                <td>2.000%</td>
+                <td></td>
+                <td></td>
+                <td>102</td>
+                <td>2</td>
+                <td>102</td>
+                <td>200</td>
+                <td>100%</td>
+            </tr>
+            <tr>
+                <td>t+2</td>
+                <td>55.125</td>
+                <td>8.088%</td>
+                <td>10.25%</td>
+                <td></td>
+                <td>110.25</td>
+                <td>3</td>
+                <td>165.375</td>
+                <td>300</td>
+                <td>50%</td>
+            </tr>
+            <tr>
+                <td colspan="2">Annual Average</td>
+                <td>5.044%</td>
+                <td>5.125%</td>
+                <td>5.000%</td>
+                <td colspan="5"></td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,210 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bar Chart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0; /* No extra space around the figure */
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 0vh; /* Center the chart vertically */
+            background-color: #f9f9f9;
+        }
+
+        .chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            height: 500px; /* Fixed height for the entire figure */
+        }
+
+        .bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+            border: 1px solid #ccc;
+        }
+
+        .segment {
+            width: 100%;
+            text-align: center;
+            color: #000;
+            font-size: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+        }
+        /* Segment Colors and Heights */
+        .C {
+            background-color: #d9f7be;
+            height: 120px;
+        }
+        /* C */
+        .I {
+            background-color: #efdbff;
+            height: 20px;
+        }
+        /* I */
+        .G {
+            background-color: #ffd6a5;
+            height: 40px;
+        }
+        /* G */
+        .XM {
+            background-color: #d6eaff;
+            height: 20px;
+        }
+        /* X-M */
+        .PIBCF {
+            background-color: #d6eaff;
+            height: 170px;
+        }
+        /* X-M */
+        .TS {
+            background-color: #d9d9d9;
+            height: 30px;
+        }
+        /* TS */
+        .primary {
+            background-color: #d9f7be;
+            height: 20 0px;
+        }
+        /* Sect. Primario */
+        .secondary {
+            background-color: #efdbff;
+            height: 75px;
+        }
+        /* Sect. Secund. */
+        .tertiary {
+            background-color: #ffd6a5;
+            height: 75px;
+        }
+        /* Sect. Terc. */
+        .PNBCF {
+            background-color: #ffd6a5;
+            height: 110px;
+        }
+        /* PNBcf */
+        .RFE {
+            background-color: #d9d9d9;
+            height: 50px;
+        }
+        /* -RFE +RFN */
+        .PNNCF {
+            background-color: #ffd6a5;
+            height: 80px;
+        }
+        /* PNNcf. */
+        .Deprec {
+            background-color: #ffd6a5;
+            height: 40px;
+        }
+        /* Deprec. */
+        .YN {
+            background-color: #ffd6a5;
+            height: 80px;
+        }
+        /* YN */
+        .YD {
+            background-color: #d9f7be;
+            height: 70px;
+        }
+        /* YD */
+        .others {
+            background-color: #efdbff;
+            height: 10px;
+        }
+        /* Others */
+        .Tra {
+            background-color: #d9f7be;
+            height: 35px;
+        }
+        /* Tra */
+        .Cap {
+            background-color: #d9f7be;
+            height: 35px;
+        }
+        /* Cap */
+        /* Labels */
+        .label {
+            margin-top: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart">
+        <!-- PIBpm -->
+        <div class="bar">
+            <div class="segment C">C</div>
+            <div class="segment I">I</div>
+            <div class="segment G">G</div>
+            <div class="segment XM">X-M</div>
+            <div class="label">GDPmp  PIBpm</div>
+        </div>
+
+        <!-- PIBcf -->
+        <div class="bar">
+            <div class="segment TS">- Imp. Indir.<br>+ Subsidios</div>
+            <div class="segment PIBCF">PIBcf</div>
+            <div class="label">GDPmp  PIBpm</div>
+        </div>
+
+        <!-- PNBcf -->
+        <div class="bar">
+            <div class="segment primary">Sect. Primario</div>
+            <div class="segment secondary">Sect. Secund.</div>
+            <div class="segment tertiary">Sect. Terc.</div>
+            <div class="label">GDPfc  PIBcf</div>
+        </div>
+
+        <!-- PNNcf -->
+        <div class="bar">
+
+            <div class="segment RFE">-RFE<br>+RFN</div>
+            <div class="segment PNBCF">PNBcf</div>
+            <div class="label">GDPfc  PIBcf</div>
+        </div>
+
+
+
+        <!-- YN -->
+        <div class="bar">
+            <div class="segment Deprec">Deprec.</div>
+            <div class="segment PNNCF">PNNcf</div>
+            <div class="label">GNPfc  PNBcf</div>
+        </div>
+
+
+        <!-- YN0 -->
+        <div class="bar">
+            <div class="segment YN">YN</div>
+            <div class="label">NNPfc PNNcf</div>
+        </div>
+
+        <!-- YD -->
+        <div class="bar">
+            <div class="segment others">*</div>
+            <div class="segment YD">YD</div>
+            <div class="label">NNDI RDNN </div>
+        </div>
+
+        <!-- YD -->
+        <div class="bar">
+            <div class="segment Tra">Sal</div>
+            <div class="segment Cap">Ben</div>
+            <div class="label">NNDI  RDNN</div>
+        </div>
+
+    </div>
+</body>
+</html>
