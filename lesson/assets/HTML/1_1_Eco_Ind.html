@@ -1,0 +1,159 @@
+<<!DOCTYPE html>
+<html>
+<head>
+    <title>GDP Component Builder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .drop-zone {
+            width: 300px;
+            min-height: 50px;
+            padding: 10px;
+            border: 2px dashed #aaa;
+            background-color: #f9f9f9;
+            margin: 10px;
+        }
+        .draggable {
+            padding: 8px;
+            background-color: #007bff;
+            color: white;
+            cursor: grab;
+            margin: 5px;
+            display: inline-block;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .equation-container {
+            display: none;
+        }
+    </style>
+    <script>
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+        
+        function drag(event) {
+            event.dataTransfer.setData("text", event.target.id);
+        }
+        
+        function drop(event) {
+            event.preventDefault();
+            let draggedElementId = event.dataTransfer.getData("text");
+            let draggedElement = document.getElementById(draggedElementId);
+            if (draggedElement && event.target.classList.contains("drop-zone")) {
+                event.target.appendChild(draggedElement);
+            }
+        }
+        
+        function removeComponent(event) {
+            let component = event.target;
+            if (component.classList.contains("draggable")) {
+                document.getElementById("components").appendChild(component);
+            }
+        }
+        
+        function checkAnswers() {
+            let activeEquation = document.querySelector(".equation-container[style*='display: block']");
+            let resultText = "Incorrect. Please check your answer and try again.";
+            
+            if (activeEquation) {
+                let equationId = activeEquation.querySelector(".drop-zone").id;
+                let dropZoneElements = Array.from(activeEquation.querySelector(".drop-zone").children).map(el => el.innerText);
+                
+                let correctElements = {
+                    "ndp-zone": ["GDP", "-Depreciation"],
+                    "gnp-zone": ["GDP", "+NPI"],
+                    "gdni-zone": ["GDP", "+NPI", "+NSI"],
+                    "nnp-zone": ["GDP", "-Depreciation", "+NPI"],
+                    "nndi-zone": ["GDP", "-Depreciation", "+NSI"]
+                };
+
+                if (correctElements[equationId] && arraysMatch(correctElements[equationId], dropZoneElements)) {
+                    resultText = "Correct! The equation is properly formed.";
+                }
+            }
+            document.getElementById("result").innerText = resultText;
+        }
+
+        function arraysMatch(arr1, arr2) {
+            return arr1.length === arr2.length && arr1.every(val => arr2.includes(val)) && arr2.every(val => arr1.includes(val));
+        }
+        
+        function resetGame() {
+            document.querySelectorAll(".drop-zone").forEach(zone => zone.innerHTML = "");
+            document.getElementById("components").innerHTML = `
+                <div id="gdp" class="draggable" draggable="true" ondragstart="drag(event)">GDP</div>
+                <div id="depreciation" class="draggable" draggable="true" ondragstart="drag(event)">-Depreciation</div>
+                <div id="npi" class="draggable" draggable="true" ondragstart="drag(event)">+NPI</div>
+                <div id="nsi" class="draggable" draggable="true" ondragstart="drag(event)">+NSI</div>
+            `;
+            document.getElementById("result").innerText = "";
+            showRandomEquation();
+        }
+        
+        function showRandomEquation() {
+            let equations = document.querySelectorAll(".equation-container");
+            equations.forEach(eq => eq.style.display = "none");
+            let randomEquation = equations[Math.floor(Math.random() * equations.length)];
+            randomEquation.style.display = "block";
+        }
+        
+        window.onload = showRandomEquation;
+    </script>
+</head>
+<body>
+    <h2>Build Economic Indicators from GDP</h2>
+    <p>Drag and drop the correct components into the box.</p>
+    <p>Press the component to delete it from the box.</p>
+    <p>Press reset button to start.</p>
+    
+    <div class="container">
+        <div class="equation-container" id="ndp-container">
+            <h3>NDP = </h3>
+            <div id="ndp-zone" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)" onclick="removeComponent(event)"></div>
+        </div>
+        <div class="equation-container" id="gnp-container">
+            <h3>GNP = </h3>
+            <div id="gnp-zone" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)" onclick="removeComponent(event)"></div>
+        </div>
+        <div class="equation-container" id="gdni-container">
+            <h3>GNDI = </h3>
+            <div id="gdni-zone" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)" onclick="removeComponent(event)"></div>
+        </div>
+        <div class="equation-container" id="nndi-container">
+            <h3>NDDI = </h3>
+            <div id="nndi-zone" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)" onclick="removeComponent(event)"></div>
+        </div>
+        <div class="equation-container" id="nnp-container">
+            <h3>NNP = </h3>
+            <div id="nnp-zone" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)" onclick="removeComponent(event)"></div>
+        </div>
+    </div>
+    
+    <h3>Available Components</h3>
+    <div class="container">
+        <div id="components"></div>
+    </div>
+    
+    <button onclick="checkAnswers()">Submit Answers</button>
+    <button onclick="resetGame()">Reset</button>
+    <p id="result"></p>
+</body>
+</html>
