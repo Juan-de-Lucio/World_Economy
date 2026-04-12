@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DTM Exercises</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        .question { margin: 20px 0; }
+        .input-answer { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Demographic Transition Model Exercises</h1>
+    
+    <!-- Fill in the Blanks Exercise -->
+    <div class="question">
+        <h2>Fill in the missing word:</h2>
+        <p id="fill-question"></p>
+        <ul id="answer-options"></ul>
+        <button onclick="checkFillAnswer()">Submit</button>
+        <button onclick="resetQuestion()">New Question</button>
+        <p id="fill-feedback"></p>
+    </div>
+    
+    <script>
+        const questions = [
+            { question: "Stage 1 is characterized by ______ birth and death rates.", answer: "high", options: ["low", "moderate", "high"] },
+            { question: "Stage 2 is characterized by ______ death rates and continued high birth rates.", answer: "falling", options: ["rising", "falling", "steady"] },
+            { question: "Stage 3 is characterized by ______ birth rates and a decreasing death rate.", answer: "declining", options: ["increasing", "declining", "stable"] },
+            { question: "Stage 4 has both birth and death rates at a ______ level.", answer: "low", options: ["high", "low", "fluctuating"] },
+            { question: "Stage 5 may experience a ______ population due to low birth rates.", answer: "declining", options: ["growing", "stable", "declining"] },
+            { question: "Which stage of the DTM is associated with rapid urbanization?", answer: "stage 3", options: ["stage 1", "stage 2", "stage 3"] },
+            { question: "Which stage has the highest population growth rate?", answer: "stage 2", options: ["stage 1", "stage 2", "stage 5"] },
+            { question: "What factor most contributes to declining death rates in Stage 2?", answer: "medical advancements", options: ["war", "medical advancements", "increased birth rates"] },
+            { question: "In which stage does the population begin to decline?", answer: "stage 5", options: ["stage 3", "stage 4", "stage 5"] },
+            { question: "Which stage is associated with developed countries with aging populations?", answer: "stage 4", options: ["stage 2", "stage 3", "stage 4"] }
+        ];
+
+        function loadQuestion() {
+            let currentQuestion = Math.floor(Math.random() * questions.length);
+            document.getElementById("fill-question").innerText = questions[currentQuestion].question;
+            
+            const optionsList = document.getElementById("answer-options");
+            optionsList.innerHTML = "";
+            questions[currentQuestion].options.forEach(option => {
+                let li = document.createElement("li");
+                li.innerHTML = `<input type='radio' name='answer' value='${option}'> ${option}`;
+                optionsList.appendChild(li);
+            });
+            
+            return currentQuestion;
+        }
+
+        let currentQuestion = loadQuestion();
+
+        function checkFillAnswer() {
+            let selectedOption = document.querySelector("input[name='answer']:checked");
+            let feedback = document.getElementById("fill-feedback");
+            
+            if (selectedOption) {
+                if (selectedOption.value === questions[currentQuestion].answer) {
+                    feedback.innerHTML = "Correct!";
+                    feedback.style.color = "green";
+                } else {
+                    feedback.innerHTML = "Incorrect. Try again!";
+                    feedback.style.color = "red";
+                }
+            } else {
+                feedback.innerHTML = "Please select an answer!";
+                feedback.style.color = "red";
+            }
+        }
+
+        function resetQuestion() {
+            currentQuestion = loadQuestion();
+            document.getElementById("fill-feedback").innerHTML = "";
+        }
+    </script>
+</body>
+</html>

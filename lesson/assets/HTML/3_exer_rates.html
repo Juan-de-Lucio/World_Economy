@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive Demographic Exercise</title>
+  <!-- Include MathJax for LaTeX rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 900px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .exercise {
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      padding: 15px;
+      margin: 15px 0;
+      display: none;  /* Oculta inicialmente todos los ejercicios */
+    }
+    .exercise p {
+      margin: 10px 0;
+    }
+    .exercise input, .exercise select {
+      padding: 5px;
+      font-size: 1em;
+    }
+    .exercise button {
+      padding: 8px 15px;
+      font-size: 1em;
+      margin-top: 10px;
+    }
+    .result {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    #switchExercise {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Demographic Exercise</h1>
+  <button id="switchExercise" onclick="showRandomExercise()">Switch Exercise</button>
+  
+  <div id="exercisesContainer">
+  
+    <!-- Mortality Rate Exercise -->
+    <div class="exercise" id="mortalityExercise">
+      <h2>Mortality Rate Exercise</h2>
+      <p id="mortalityData"></p>
+      <p>
+        <strong>Question:</strong> Calculate the <em>Mortality Rate</em> using the formula:<br>
+        \( \displaystyle \text{Mortality Rate} = \frac{\text{Number of deaths}}{\text{Total population}} \times 1000 \)
+      </p>
+      <p>
+        <label for="mortalityAnswer">Your answer (per 1,000):</label>
+        <input type="text" id="mortalityAnswer">
+      </p>
+      <button onclick="checkMortality()">Check Answer</button>
+      <button onclick="generateMortality()">New Exercise</button>
+      <p class="result" id="mortalityResult"></p>
+    </div>
+  
+    <!-- Natural Growth Rate Exercise -->
+    <div class="exercise" id="naturalGrowthExercise">
+      <h2>Natural Growth Rate Exercise</h2>
+      <p id="naturalGrowthData"></p>
+      <p>
+        <strong>Question:</strong> Calculate the <em>Natural Growth Rate</em> using the formula:<br>
+        \( \displaystyle \text{Natural Growth Rate} = \frac{(\text{Births} - \text{Deaths})}{\text{Total population}} \times 100 \)
+      </p>
+      <p>
+        <label for="naturalGrowthAnswer">Your answer (%):</label>
+        <input type="text" id="naturalGrowthAnswer">
+      </p>
+      <button onclick="checkNaturalGrowth()">Check Answer</button>
+      <button onclick="generateNaturalGrowth()">New Exercise</button>
+      <p class="result" id="naturalGrowthResult"></p>
+    </div>
+  
+    <!-- Annual Growth Rate Exercise -->
+    <div class="exercise" id="annualGrowthExercise">
+      <h2>Annual Growth Rate Exercise</h2>
+      <p id="annualGrowthData"></p>
+      <p>
+        <strong>Question:</strong> Calculate the <em>Annual Growth Rate</em> using the formula:<br>
+        \( \displaystyle \text{Annual Growth Rate} = \frac{(\text{Births} - \text{Deaths} + \text{Immigrants} - \text{Emigrants})}{\text{Total population}} \times 100 \)
+      </p>
+      <p>
+        <label for="annualGrowthAnswer">Your answer (%):</label>
+        <input type="text" id="annualGrowthAnswer">
+      </p>
+      <button onclick="checkAnnualGrowth()">Check Answer</button>
+      <button onclick="generateAnnualGrowth()">New Exercise</button>
+      <p class="result" id="annualGrowthResult"></p>
+    </div>
+  
+    <!-- Birth Rate Exercise -->
+    <div class="exercise" id="birthRateExercise">
+      <h2>Birth Rate Exercise</h2>
+      <p id="birthRateData"></p>
+      <p>
+        <strong>Question:</strong> Calculate the <em>Birth Rate</em> using the formula:<br>
+        \( \displaystyle \text{Birth Rate} = \frac{\text{Number of births}}{\text{Total population}} \times 1000 \)
+      </p>
+      <p>
+        <label for="birthRateAnswer">Your answer (per 1,000):</label>
+        <input type="text" id="birthRateAnswer">
+      </p>
+      <button onclick="checkBirthRate()">Check Answer</button>
+      <button onclick="generateBirthRate()">New Exercise</button>
+      <p class="result" id="birthRateResult"></p>
+    </div>
+  
+    <!-- General Fertility Rate (GFR) Exercise -->
+    <div class="exercise" id="fertilityExercise">
+      <h2>General Fertility Rate (GFR) Exercise</h2>
+      <p id="fertilityData"></p>
+      <p>
+        <strong>Question:</strong> Calculate the <em>General Fertility Rate</em> using the formula:<br>
+        \( \displaystyle \text{GFR} = \frac{B}{\text{NF}_{15-49}} \times 1000 \)
+      </p>
+      <p>
+        <label for="fertilityAnswer">Your answer (per 1,000):</label>
+        <input type="text" id="fertilityAnswer">
+      </p>
+      <button onclick="checkFertility()">Check Answer</button>
+      <button onclick="generateFertility()">New Exercise</button>
+      <p class="result" id="fertilityResult"></p>
+    </div>
+  
+    <!-- Life Expectancy Exercise (Multiple Choice) -->
+    <div class="exercise" id="lifeExpectancyExercise">
+      <h2>Life Expectancy Exercise</h2>
+      <p>
+        <strong>Question:</strong> What does Life Expectancy at birth represent?
+      </p>
+      <p>
+        <input type="radio" name="lifeExp" value="A" id="optionA">
+        <label for="optionA">The total number of years lived by a cohort.</label><br>
+        <input type="radio" name="lifeExp" value="B" id="optionB">
+        <label for="optionB">The average number of years a newborn is expected to live if current mortality rates remain constant.</label><br>
+        <input type="radio" name="lifeExp" value="C" id="optionC">
+        <label for="optionC">The maximum age reached by individuals in a population.</label><br>
+        <input type="radio" name="lifeExp" value="D" id="optionD">
+        <label for="optionD">The difference between the ages of the oldest and youngest individuals in a cohort.</label>
+      </p>
+      <button onclick="checkLifeExpectancy()">Check Answer</button>
+      <button onclick="resetLifeExpectancy()">New Exercise</button>
+      <p class="result" id="lifeExpResult"></p>
+    </div>
+  
+  </div> <!-- Fin de exercisesContainer -->
+  
+  <script>
+    // Función utilitaria para generar un entero aleatorio entre min y max (inclusive)
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    
+    // ---------------- Mortality Rate ----------------
+    let mortalityCorrect = 0;
+    function generateMortality() {
+      const deaths = randomInt(10000, 50000);
+      const population = randomInt(5000000, 20000000);
+      mortalityCorrect = (deaths / population) * 1000;
+      document.getElementById("mortalityData").innerHTML =
+        `<strong>Data:</strong> Deaths = ${deaths}, Total Population = ${population}`;
+      document.getElementById("mortalityAnswer").value = "";
+      document.getElementById("mortalityResult").innerText = "";
+    }
+    function checkMortality() {
+      const userAns = parseFloat(document.getElementById("mortalityAnswer").value);
+      let res = "";
+      if (isNaN(userAns)) {
+        res = "Please enter a valid number.";
+      } else {
+        if (Math.abs(userAns - mortalityCorrect) < 0.05) {
+          res = "Correct! Mortality Rate is " + mortalityCorrect.toFixed(2) + " per 1,000.";
+        } else {
+          res = "Incorrect. Try again.";
+        }
+      }
+      document.getElementById("mortalityResult").innerText = res;
+    }
+    
+    // ---------------- Natural Growth Rate ----------------
+    let natGrowthCorrect = 0;
+    function generateNaturalGrowth() {
+      const births = randomInt(20000, 100000);
+      const deaths = randomInt(10000, 50000);
+      const population = randomInt(5000000, 20000000);
+      natGrowthCorrect = ((births - deaths) / population) * 100;
+      document.getElementById("naturalGrowthData").innerHTML =
+        `<strong>Data:</strong> Births = ${births}, Deaths = ${deaths}, Total Population = ${population}`;
+      document.getElementById("naturalGrowthAnswer").value = "";
+      document.getElementById("naturalGrowthResult").innerText = "";
+    }
+    function checkNaturalGrowth() {
+      const userAns = parseFloat(document.getElementById("naturalGrowthAnswer").value);
+      let res = "";
+      if (isNaN(userAns)) {
+        res = "Please enter a valid number.";
+      } else {
+        if (Math.abs(userAns - natGrowthCorrect) < 0.05) {
+          res = "Correct! Natural Growth Rate is " + natGrowthCorrect.toFixed(2) + "%.";
+        } else {
+          res = "Incorrect. Try again.";
+        }
+      }
+      document.getElementById("naturalGrowthResult").innerText = res;
+    }
+    
+    // ---------------- Annual Growth Rate ----------------
+    let annualGrowthCorrect = 0;
+    function generateAnnualGrowth() {
+      const births = randomInt(20000, 100000);
+      const deaths = randomInt(10000, 50000);
+      const immigrants = randomInt(5000, 30000);
+      const emigrants = randomInt(3000, 25000);
+      const population = randomInt(5000000, 20000000);
+      annualGrowthCorrect = ((births - deaths + immigrants - emigrants) / population) * 100;
+      document.getElementById("annualGrowthData").innerHTML =
+        `<strong>Data:</strong> Births = ${births}, Deaths = ${deaths}, Immigrants = ${immigrants}, Emigrants = ${emigrants}, Total Population = ${population}`;
+      document.getElementById("annualGrowthAnswer").value = "";
+      document.getElementById("annualGrowthResult").innerText = "";
+    }
+    function checkAnnualGrowth() {
+      const userAns = parseFloat(document.getElementById("annualGrowthAnswer").value);
+      let res = "";
+      if (isNaN(userAns)) {
+        res = "Please enter a valid number.";
+      } else {
+        if (Math.abs(userAns - annualGrowthCorrect) < 0.05) {
+          res = "Correct! Annual Growth Rate is " + annualGrowthCorrect.toFixed(2) + "%.";
+        } else {
+          res = "Incorrect. Try again.";
+        }
+      }
+      document.getElementById("annualGrowthResult").innerText = res;
+    }
+    
+    // ---------------- Birth Rate ----------------
+    let birthRateCorrect = 0;
+    function generateBirthRate() {
+      const births = randomInt(20000, 100000);
+      const population = randomInt(5000000, 20000000);
+      birthRateCorrect = (births / population) * 1000;
+      document.getElementById("birthRateData").innerHTML =
+        `<strong>Data:</strong> Births = ${births}, Total Population = ${population}`;
+      document.getElementById("birthRateAnswer").value = "";
+      document.getElementById("birthRateResult").innerText = "";
+    }
+    function checkBirthRate() {
+      const userAns = parseFloat(document.getElementById("birthRateAnswer").value);
+      let res = "";
+      if (isNaN(userAns)) {
+        res = "Please enter a valid number.";
+      } else {
+        if (Math.abs(userAns - birthRateCorrect) < 0.05) {
+          res = "Correct! Birth Rate is " + birthRateCorrect.toFixed(2) + " per 1,000.";
+        } else {
+          res = "Incorrect. Try again.";
+        }
+      }
+      document.getElementById("birthRateResult").innerText = res;
+    }
+    
+    // ---------------- General Fertility Rate (GFR) ----------------
+    let fertilityCorrect = 0;
+    function generateFertility() {
+      const births = randomInt(5000, 10000);
+      const femalePopulation = randomInt(100000, 300000);
+      fertilityCorrect = (births / femalePopulation) * 1000;
+      document.getElementById("fertilityData").innerHTML =
+        `<strong>Data:</strong> Total Births (B) = ${births}, Female Population (15-49) = ${femalePopulation}`;
+      document.getElementById("fertilityAnswer").value = "";
+      document.getElementById("fertilityResult").innerText = "";
+    }
+    function checkFertility() {
+      const userAns = parseFloat(document.getElementById("fertilityAnswer").value);
+      let res = "";
+      if (isNaN(userAns)) {
+        res = "Please enter a valid number.";
+      } else {
+        if (Math.abs(userAns - fertilityCorrect) < 0.05) {
+          res = "Correct! GFR is " + fertilityCorrect.toFixed(2) + " per 1,000.";
+        } else {
+          res = "Incorrect. Try again.";
+        }
+      }
+      document.getElementById("fertilityResult").innerText = res;
+    }
+    
+    // ---------------- Life Expectancy Exercise (Multiple Choice) ----------------
+    function checkLifeExpectancy() {
+      const options = document.getElementsByName("lifeExp");
+      let selected = "";
+      for (let i = 0; i < options.length; i++) {
+        if (options[i].checked) {
+          selected = options[i].value;
+          break;
+        }
+      }
+      let res = "";
+      // La respuesta correcta es la opción B.
+      if (selected === "B") {
+        res = "Correct! Life expectancy at birth represents the average number of years a newborn is expected to live if current mortality rates remain constant.";
+      } else if (selected === "") {
+        res = "Please select an option.";
+      } else {
+        res = "Incorrect. Please try again.";
+      }
+      document.getElementById("lifeExpResult").innerText = res;
+    }
+    function resetLifeExpectancy() {
+      const options = document.getElementsByName("lifeExp");
+      for (let i = 0; i < options.length; i++) {
+        options[i].checked = false;
+      }
+      document.getElementById("lifeExpResult").innerText = "";
+    }
+    
+    // ---------------- Mostrar un ejercicio al azar ----------------
+    function showRandomExercise() {
+      const container = document.getElementById("exercisesContainer");
+      const exercises = Array.from(container.getElementsByClassName("exercise"));
+      // Oculta todos los ejercicios
+      exercises.forEach(ex => ex.style.display = "none");
+      // Selecciona un ejercicio al azar
+      const randomIndex = Math.floor(Math.random() * exercises.length);
+      exercises[randomIndex].style.display = "block";
+    }
+    
+    // ---------------- Inicialización ----------------
+    function initExercises() {
+      generateMortality();
+      generateNaturalGrowth();
+      generateAnnualGrowth();
+      generateBirthRate();
+      generateFertility();
+      // Life Expectancy no requiere generación aleatoria de datos.
+      showRandomExercise();
+    }
+    
+    window.onload = initExercises;
+  </script>
+</body>
+</html>

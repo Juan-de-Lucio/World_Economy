@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Trade Model with Exports/Imports Annotations</title>
+  <!-- Load Plotly from CDN -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+<div id="myPlot" style="width: 600px; height: 400px;"></div>
+
+<script>
+// ------------------------------------------------------------------
+// 1. Define Model Functions
+// ------------------------------------------------------------------
+
+// Production Possibilities Frontier (quarter-circle)
+function ppf(QM) {
+  // Q_A = sqrt(10000 - Q_M^2)
+  return Math.sqrt(10000 - QM * QM);
+}
+
+// Production point given international price p = P_M/P_A
+function productionPoint(p) {
+  // Q_M* = 100 * p / sqrt(1 + p^2)
+  // Q_A* = 100 / sqrt(1 + p^2)
+  const QM_star = (100 * p) / Math.sqrt(1 + p * p);
+  const QA_star = 100 / Math.sqrt(1 + p * p);
+  return [QM_star, QA_star];
+}
+
+// TOT line intercept (so that the line is tangent to the PPF)
+function totIntercept(p) {
+  // intercept = 100 * sqrt(1 + p^2)
+  return 100 * Math.sqrt(1 + p * p);
+}
+
+// Consumption point maximizing U = Q_M * Q_A subject to TOT line
+function consumptionPoint(p) {
+  const intercept = totIntercept(p);
+  // d/dQ_M of U = Q_M * (intercept - p*Q_M) gives: Q_M^c = intercept / (2p)
+  const QM_c = intercept / (2 * p);
+  const QA_c = intercept - p * QM_c;
+  return [QM_c, QA_c];
+}
+
+// Generate indifference curve data given utility level U0 = Q_M^c * Q_A^c
+// The curve is: Q_A = U0 / Q_M for a range of Q_M (avoiding QM=0)
+function indifferenceCurve(U0) {
+  let QM_indiff = [];
+  let QA_indiff = [];
+  const stepsIndiff = 200;
+  for (let i = 0; i <= stepsIndiff; i++) {
+    let qm = 1 + (299 / stepsIndiff) * i; // from 1 to 300
+    QM_indiff.push(qm);
+    QA_indiff.push(U0 / qm);
+  }
+  return { QM: QM_indiff, QA: QA_indiff };
+}
+
+// ------------------------------------------------------------------
+// 2. Generate Data for the PPF and TOT line Domain
+// ------------------------------------------------------------------
+
+// PPF data for QM from 0 to 100
+let QM_vals = [];
+let QA_vals = [];
+const stepsPPF = 200;
+for (let i = 0; i <= stepsPPF; i++) {
+  const QM = (100 / stepsPPF) * i;
+  QM_vals.push(QM);
+  QA_vals.push(ppf(QM));
+}
+
+// Domain for TOT line (extended from 0 to 300)
+let QM_tot_domain = [];
+const stepsTOT = 200;
+for (let i = 0; i <= stepsTOT; i++) {
+  let qm = (300 / stepsTOT) * i;
+  QM_tot_domain.push(qm);
+}
+
+// Define the static PPF trace (green)
+const ppfTrace = {
+  x: QM_vals,
+  y: QA_vals,
+  mode: 'lines',
+  line: { color: 'green' },
+  name: 'PPF - Prod. Poss. Front.---'
+};
+
+// ------------------------------------------------------------------
+// 3. Create Frames for Different p Values with Annotations
+// ------------------------------------------------------------------
+const pValues = [];
+const numPrices = 10;
+const pMin = 0.2;
+const pMax = 2.9;
+for (let i = 0; i < numPrices; i++) {
+  pValues.push(pMin + i * ((pMax - pMin) / (numPrices - 1)));
+}
+
+const frames = pValues.map((p) => {
+  const [QM_star, QA_star] = productionPoint(p);
+  const [QM_c, QA_c] = consumptionPoint(p);
+  const intercept = totIntercept(p);
+  // TOT line data on extended domain
+  const QA_tot = QM_tot_domain.map((qm) => intercept - p * qm);
+  // Utility level at consumption point
+  const U0 = QM_c * QA_c;
+  const indiff = indifferenceCurve(U0);
+
+  // Compute trade differences and set the corresponding labels.
+  // For manufacturing: difference between consumption and production of QM.
+  const diff_M = QM_c - QM_star;
+  const text_M = diff_M > 0 
+    ? `Manufacturing Imports: ${diff_M.toFixed(1)}` 
+    : `Manufacturing Exports: ${Math.abs(diff_M).toFixed(1)}`;
+  // For agriculture: difference between consumption and production of QA.
+  const diff_A = QA_c - QA_star;
+  const text_A = diff_A > 0 
+    ? `Agricultural Imports: ${diff_A.toFixed(1)}` 
+    : `Agricultural Exports: ${Math.abs(diff_A).toFixed(1)}`;
+
+  // Determine positions for the annotations (midpoint of the arrows).
+  const x_ann_M = (QM_star + QM_c) / 2;
+  const y_ann_M = QA_star; // Horizontal arrow position
+  const x_ann_A = QM_c;
+  const y_ann_A = (QA_star + QA_c) / 2; // Vertical arrow position
+
+  return {
+    name: `p=${p.toFixed(2)}`,
+    data: [
+      // Static PPF (green)
+      ppfTrace,
+      // TOT line (red)
+      {
+        x: QM_tot_domain,
+        y: QA_tot,
+        mode: 'lines',
+        line: { color: 'red' },
+        showlegend: false
+      },
+      // Production point (black)
+      {
+        x: [QM_star],
+        y: [QA_star],
+        mode: 'markers',
+        marker: { color: 'black', size: 8 },
+        showlegend: false
+      },
+      // Consumption point (blue)
+      {
+        x: [QM_c],
+        y: [QA_c],
+        mode: 'markers',
+        marker: { color: 'blue', size: 8 },
+        showlegend: false
+      },
+      // Horizontal arrow for manufacturing trade
+      {
+        x: [QM_star, QM_c],
+        y: [QA_star, QA_star],
+        mode: 'lines',
+        line: { color: 'black', dash: 'dot' },
+        showlegend: false
+      },
+      // Vertical arrow for agricultural trade
+      {
+        x: [QM_c, QM_c],
+        y: [QA_star, QA_c],
+        mode: 'lines',
+        line: { color: 'black', dash: 'dot' },
+        showlegend: false
+      },
+      // Indifference curve (orange)
+      {
+        x: indiff.QM,
+        y: indiff.QA,
+        mode: 'lines',
+        line: { color: 'orange' },
+        name: 'Indifference Curve'
+      }
+    ],
+    layout: {
+      annotations: [
+        {
+          x: x_ann_M,
+          y: y_ann_M,
+          text: text_M,
+          showarrow: false,
+          font: { color: 'black' }
+        },
+        {
+          x: x_ann_A,
+          y: y_ann_A,
+          text: text_A,
+          showarrow: false,
+          font: { color: 'black' }
+        }
+      ]
+    }
+  };
+});
+
+// ------------------------------------------------------------------
+// 4. Build Initial Plot Data (for p = pValues[0]) with Annotations
+// ------------------------------------------------------------------
+const initP = pValues[0];
+const [initQM_star, initQA_star] = productionPoint(initP);
+const [initQM_c, initQA_c] = consumptionPoint(initP);
+const initIntercept = totIntercept(initP);
+const initQA_tot = QM_tot_domain.map((qm) => initIntercept - initP * qm);
+const U0_init = initQM_c * initQA_c;
+const initIndiff = indifferenceCurve(U0_init);
+
+// Compute initial trade differences and annotations.
+const diff_M_init = initQM_c - initQM_star;
+const diff_A_init = initQA_c - initQA_star;
+const text_M_init = diff_M_init > 0 
+  ? `Manufacturing Imports: ${diff_M_init.toFixed(1)}` 
+  : `Manufacturing Exports: ${Math.abs(diff_M_init).toFixed(1)}`;
+const text_A_init = diff_A_init > 0 
+  ? `Agricultural Imports: ${diff_A_init.toFixed(1)}` 
+  : `Agricultural Exports: ${Math.abs(diff_A_init).toFixed(1)}`;
+const ann_x_M_init = (initQM_star + initQM_c) / 2;
+const ann_y_M_init = initQA_star;
+const ann_x_A_init = initQM_c;
+const ann_y_A_init = (initQA_star + initQA_c) / 2;
+
+const traceTOT = {
+  x: QM_tot_domain,
+  y: initQA_tot,
+  mode: 'lines',
+  line: { color: 'red' },
+  name: 'TOT line'
+};
+
+const traceProduction = {
+  x: [initQM_star],
+  y: [initQA_star],
+  mode: 'markers',
+  marker: { color: 'black', size: 8 },
+  name: 'Production'
+};
+
+const traceConsumption = {
+  x: [initQM_c],
+  y: [initQA_c],
+  mode: 'markers',
+  marker: { color: 'blue', size: 8 },
+  name: 'Consumption'
+};
+
+const traceArrow1 = {
+  x: [initQM_star, initQM_c],
+  y: [initQA_star, initQA_star],
+  mode: 'lines',
+  line: { color: 'black', dash: 'dot' },
+  showlegend: false
+};
+
+const traceArrow2 = {
+  x: [initQM_c, initQM_c],
+  y: [initQA_star, initQA_c],
+  mode: 'lines',
+  line: { color: 'black', dash: 'dot' },
+  showlegend: false
+};
+
+const traceIndifference = {
+  x: initIndiff.QM,
+  y: initIndiff.QA,
+  mode: 'lines',
+  line: { color: 'orange' },
+  name: 'Indifference Curve'
+};
+
+const initialData = [
+  ppfTrace,
+  traceTOT,
+  traceProduction,
+  traceConsumption,
+  traceArrow1,
+  traceArrow2,
+  traceIndifference
+];
+
+const initialAnnotations = [
+  {
+    x: ann_x_M_init,
+    y: ann_y_M_init,
+    text: text_M_init,
+    showarrow: false,
+    font: { color: 'black' }
+  },
+  {
+    x: ann_x_A_init,
+    y: ann_y_A_init,
+    text: text_A_init,
+    showarrow: false,
+    font: { color: 'black' }
+  }
+];
+
+// ------------------------------------------------------------------
+// 5. Define Layout with Slider and Play/Pause Buttons, including Annotations
+// ------------------------------------------------------------------
+const layout = {
+  title: "Interactive PPF with Changing International Price (p)",
+  xaxis: {
+    title: "Manufacturing Output (Q_M)",
+    range: [0, 300]
+  },
+  yaxis: {
+    title: "Agricultural Output (Q_A)",
+    range: [0, 150]
+  },
+  annotations: initialAnnotations,
+  updatemenus: [
+    {
+      type: "buttons",
+      direction: "left",
+      pad: { r: 10, t: 30 },
+      x: 0.1,
+      y: 1.2,
+      buttons: [
+        {
+          label: "Play",
+          method: "animate",
+          args: [null, {
+            fromcurrent: true,
+            frame: { duration: 800, redraw: true },
+            transition: { duration: 500, easing: "cubic-in-out" }
+          }]
+        },
+        {
+          label: "Pause",
+          method: "animate",
+          args: [
+            [null],
+            {
+              mode: "immediate",
+              frame: { duration: 0, redraw: true },
+              transition: { duration: 0 }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  sliders: [
+    {
+      active: 0,
+      currentvalue: { prefix: "Price p: " },
+      pad: { t: 50 },
+      steps: pValues.map((p) => {
+        return {
+          label: p.toFixed(2),
+          method: "animate",
+          args: [
+            [ `p=${p.toFixed(2)}` ],
+            {
+              mode: "immediate",
+              frame: { duration: 0, redraw: true },
+              transition: { duration: 300 }
+            }
+          ]
+        };
+      })
+    }
+  ]
+};
+
+const config = { responsive: true };
+
+// ------------------------------------------------------------------
+// 6. Combine and Render the Plot with Frames
+// ------------------------------------------------------------------
+Plotly.newPlot("myPlot", initialData, layout, config).then(function() {
+  Plotly.addFrames("myPlot", frames);
+});
+</script>
+</body>
+</html>
