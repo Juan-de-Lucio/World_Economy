@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Economic Effects of Tariffs</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 1000px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .slider-container {
+      margin: 10px 0;
+    }
+    label {
+      margin-right: 10px;
+    }
+    .plot-container {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Economic Effects of Tariffs</h1>
+
+<div class="slider-container">
+  <label for="demandSlider">Demand Intercept (A<sub>d</sub>):</label>
+  <input type="range" id="demandSlider" min="8" max="14" step="0.5" value="12" />
+  <span id="demandValue"></span>
+</div>
+
+<div class="slider-container">
+  <label for="demandSlopeSlider">Demand Slope (b):</label>
+  <input type="range" id="demandSlopeSlider" min="0.1" max="1" step="0.1" value="0.5" />
+  <span id="demandSlopeValue"></span>
+</div>
+
+<div class="slider-container">
+  <label for="supplySlider">Supply Intercept (A<sub>s</sub>):</label>
+  <input type="range" id="supplySlider" min="1" max="5" step="0.5" value="2" />
+  <span id="supplyValue"></span>
+</div>
+
+<div class="slider-container">
+  <label for="supplySlopeSlider">Supply Slope (c):</label>
+  <input type="range" id="supplySlopeSlider" min="0.1" max="1" step="0.1" value="0.5" />
+  <span id="supplySlopeValue"></span>
+</div>
+
+<div class="slider-container">
+  <label for="worldPriceSlider">World Price (P<sub>w</sub>):</label>
+  <input type="range" id="worldPriceSlider" min="1" max="5" step="0.5" value="3" />
+  <span id="worldPriceValue"></span>
+</div>
+
+<div class="slider-container">
+  <label for="tariffSlider">Tariff (t):</label>
+  <input type="range" id="tariffSlider" min="0" max="3" step="0.5" value="1" />
+  <span id="tariffValue"></span>
+</div>
+
+<div class="plot-container" id="myPlot"></div>
+
+<script>
+// -------------------------------------------------------
+// Global parameters (initial values from sliders)
+let Ad = parseFloat(document.getElementById("demandSlider").value);
+let b  = parseFloat(document.getElementById("demandSlopeSlider").value);
+let As = parseFloat(document.getElementById("supplySlider").value);
+let c  = parseFloat(document.getElementById("supplySlopeSlider").value);
+let Pw = parseFloat(document.getElementById("worldPriceSlider").value);
+let t  = parseFloat(document.getElementById("tariffSlider").value);
+
+// Display initial slider values
+document.getElementById("demandValue").textContent = Ad;
+document.getElementById("demandSlopeValue").textContent = b;
+document.getElementById("supplyValue").textContent = As;
+document.getElementById("supplySlopeValue").textContent = c;
+document.getElementById("worldPriceValue").textContent = Pw;
+document.getElementById("tariffValue").textContent = t;
+
+// -------------------------------------------------------
+// 1) Model Functions & Plotting Setup
+// -------------------------------------------------------
+
+// Demand: P = Ad - b*Q
+// Supply: P = As + c*Q
+// Domestic Price: PD = Pw + t
+const Q_MAX = 30;
+let Q_vals = [];
+for (let i = 0; i <= Q_MAX; i++) {
+  Q_vals.push(i);
+}
+
+// -------------------------------------------------------
+// 2) Main function: compute plot data and layout
+// -------------------------------------------------------
+function computePlotData(Ad, b, As, c, Pw, t) {
+  const PD = Pw + t; // Domestic Price
+  
+  // Compute Demand & Supply curves:
+  let demandY = Q_vals.map(Q => Ad - b * Q);
+  let supplyY = Q_vals.map(Q => As + c * Q);
+  
+  // Equilibrium at PD:
+  // Demand: PD = Ad - b*Qd  => Qd = (Ad - PD)/b
+  // Supply: PD = As + c*Qs  => Qs = (PD - As)/c
+  let Qd = (Ad - PD) / b;
+  let Qs = (PD - As) / c;
+  let QdT = Qd < 0 ? 0 : Qd;
+  let QsT = Qs < 0 ? 0 : Qs;
+  
+  // Calculate Consumer Surplus (CS) and Producer Surplus (PS)
+  // CS = 0.5*(Ad - PD)*Qd, PS = 0.5*(PD - As)*Qs
+  let CS = 0.5 * (Ad - PD) * QdT;
+  let PS = 0.5 * (PD - As) * QsT;
+  
+  // Create horizontal lines for world price & domestic price
+  let linePW = { x: [0, Q_MAX], y: [Pw, Pw] };
+  let linePD = { x: [0, Q_MAX], y: [PD, PD] };
+  
+  // Build Plotly traces
+  let data = [
+    {
+      x: Q_vals,
+      y: demandY,
+      mode: 'lines',
+      name: 'Demand',
+      line: { color: 'blue' }
+    },
+    {
+      x: Q_vals,
+      y: supplyY,
+      mode: 'lines',
+      name: 'Supply',
+      line: { color: 'green' }
+    },
+    {
+      x: linePW.x,
+      y: linePW.y,
+      mode: 'lines',
+      name: `World Price (Pw=${Pw})`,
+      line: { color: 'red', dash: 'dot' }
+    },
+    {
+      x: linePD.x,
+      y: linePD.y,
+      mode: 'lines',
+      name: `Domestic Price (Pw+t=${PD})`,
+      line: { color: 'orange', dash: 'dash' }
+    }
+  ];
+  
+  // Annotations for Qd and Qs at PD
+  let annotations = [];
+  annotations.push({
+    x: QdT,
+    y: PD,
+    xanchor: 'left',
+    yanchor: 'top',
+    text: `Q<sub>d</sub> = ${QdT.toFixed(2)}`,
+    showarrow: true,
+    arrowhead: 2,
+    ax: 30,
+    ay: -30
+  });
+  annotations.push({
+    x: QsT,
+    y: PD,
+    xanchor: 'right',
+    yanchor: 'bottom',
+    text: `Q<sub>s</sub> = ${QsT.toFixed(2)}`,
+    showarrow: true,
+    arrowhead: 2,
+    ax: -30,
+    ay: 30
+  });
+  
+  // Additional annotations for Consumer Surplus and Producer Surplus.
+  // Place them in the upper region of the graph.
+  const layout_y_max = Math.max(Ad, PD) + 5;
+  annotations.push({
+    x: Q_MAX * 0.65,
+    y: layout_y_max * 0.95,
+    text: `CS = ${CS.toFixed(2)}`,
+    showarrow: false,
+    font: { color: "blue", size: 14 }
+  });
+  annotations.push({
+    x: Q_MAX * 0.65,
+    y: layout_y_max * 0.90,
+    text: `PS = ${PS.toFixed(2)}`,
+    showarrow: false,
+    font: { color: "green", size: 14 }
+  });
+  
+  // Return data and layout
+  return {
+    data: data,
+    layout: {
+      title: `Economic Effects of Tariffs: Ad=${Ad}, b=${b}, As=${As}, c=${c}, Pw=${Pw}, t=${t}`,
+      xaxis: { title: 'Quantity (Q)', range: [0, Q_MAX] },
+      yaxis: { title: 'Price (P)', range: [0, layout_y_max] },
+      annotations: annotations
+    }
+  };
+}
+
+// -------------------------------------------------------
+// 3) Initialize the Plot
+// -------------------------------------------------------
+function initPlot() {
+  const params = computePlotData(Ad, b, As, c, Pw, t);
+  Plotly.newPlot('myPlot', params.data, params.layout);
+}
+
+// -------------------------------------------------------
+// 4) Update the Plot when any slider changes
+// -------------------------------------------------------
+function updatePlot() {
+  Ad = parseFloat(document.getElementById("demandSlider").value);
+  b  = parseFloat(document.getElementById("demandSlopeSlider").value);
+  As = parseFloat(document.getElementById("supplySlider").value);
+  c  = parseFloat(document.getElementById("supplySlopeSlider").value);
+  Pw = parseFloat(document.getElementById("worldPriceSlider").value);
+  t  = parseFloat(document.getElementById("tariffSlider").value);
+  
+  // Update displayed slider values
+  document.getElementById("demandValue").textContent = Ad;
+  document.getElementById("demandSlopeValue").textContent = b;
+  document.getElementById("supplyValue").textContent = As;
+  document.getElementById("supplySlopeValue").textContent = c;
+  document.getElementById("worldPriceValue").textContent = Pw;
+  document.getElementById("tariffValue").textContent = t;
+  
+  const params = computePlotData(Ad, b, As, c, Pw, t);
+  Plotly.react('myPlot', params.data, params.layout);
+}
+
+// -------------------------------------------------------
+// 5) Attach event listeners to all sliders
+// -------------------------------------------------------
+document.getElementById("demandSlider").addEventListener("input", updatePlot);
+document.getElementById("demandSlopeSlider").addEventListener("input", updatePlot);
+document.getElementById("supplySlider").addEventListener("input", updatePlot);
+document.getElementById("supplySlopeSlider").addEventListener("input", updatePlot);
+document.getElementById("worldPriceSlider").addEventListener("input", updatePlot);
+document.getElementById("tariffSlider").addEventListener("input", updatePlot);
+
+// -------------------------------------------------------
+// 6) On page load, initialize the plot
+// -------------------------------------------------------
+initPlot();
+</script>
+
+</body>
+</html>

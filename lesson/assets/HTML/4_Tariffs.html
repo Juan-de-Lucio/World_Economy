@@ -2,260 +2,453 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Economic Effects of Tariffs</title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-      max-width: 1000px;
+      margin: 20px auto;
+      max-width: 1100px;
+      line-height: 1.35;
     }
+
     h1 {
       text-align: center;
+      margin-bottom: 10px;
     }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 24px;
+      margin-bottom: 18px;
+    }
+
     .slider-container {
-      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
     }
-    label {
-      margin-right: 10px;
+
+    .slider-container label {
+      min-width: 210px;
+      font-weight: 600;
     }
+
+    .slider-container input[type="range"] {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .slider-value {
+      min-width: 48px;
+      font-weight: 700;
+    }
+
     .plot-container {
-      margin-top: 20px;
+      margin-top: 10px;
+    }
+
+    .footnote {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #444;
+    }
+
+    @media (max-width: 900px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
 
-<h1>Economic Effects of Tariffs</h1>
 
-<div class="slider-container">
-  <label for="demandSlider">Demand Intercept (A<sub>d</sub>):</label>
-  <input type="range" id="demandSlider" min="8" max="14" step="0.5" value="12" />
-  <span id="demandValue"></span>
-</div>
 
-<div class="slider-container">
-  <label for="demandSlopeSlider">Demand Slope (b):</label>
-  <input type="range" id="demandSlopeSlider" min="0.1" max="1" step="0.1" value="0.5" />
-  <span id="demandSlopeValue"></span>
-</div>
+<div class="controls">
+  <div class="slider-container">
+    <label for="demandSlider">Demand Intercept (A<sub>d</sub>)</label>
+    <input type="range" id="demandSlider" min="8" max="18" step="0.5" value="12" />
+    <span class="slider-value" id="demandValue"></span>
+  </div>
 
-<div class="slider-container">
-  <label for="supplySlider">Supply Intercept (A<sub>s</sub>):</label>
-  <input type="range" id="supplySlider" min="1" max="5" step="0.5" value="2" />
-  <span id="supplyValue"></span>
-</div>
+  <div class="slider-container">
+    <label for="demandSlopeSlider">Demand Slope (b)</label>
+    <input type="range" id="demandSlopeSlider" min="0.1" max="1.5" step="0.1" value="0.5" />
+    <span class="slider-value" id="demandSlopeValue"></span>
+  </div>
 
-<div class="slider-container">
-  <label for="supplySlopeSlider">Supply Slope (c):</label>
-  <input type="range" id="supplySlopeSlider" min="0.1" max="1" step="0.1" value="0.5" />
-  <span id="supplySlopeValue"></span>
-</div>
+  <div class="slider-container">
+    <label for="supplySlider">Supply Intercept (A<sub>s</sub>)</label>
+    <input type="range" id="supplySlider" min="0" max="8" step="0.5" value="2" />
+    <span class="slider-value" id="supplyValue"></span>
+  </div>
 
-<div class="slider-container">
-  <label for="worldPriceSlider">World Price (P<sub>w</sub>):</label>
-  <input type="range" id="worldPriceSlider" min="1" max="5" step="0.5" value="3" />
-  <span id="worldPriceValue"></span>
-</div>
+  <div class="slider-container">
+    <label for="supplySlopeSlider">Supply Slope (c)</label>
+    <input type="range" id="supplySlopeSlider" min="0.1" max="1.5" step="0.1" value="0.5" />
+    <span class="slider-value" id="supplySlopeValue"></span>
+  </div>
 
-<div class="slider-container">
-  <label for="tariffSlider">Tariff (t):</label>
-  <input type="range" id="tariffSlider" min="0" max="3" step="0.5" value="1" />
-  <span id="tariffValue"></span>
+  <div class="slider-container">
+    <label for="worldPriceSlider">World Price (P<sub>w</sub>)</label>
+    <input type="range" id="worldPriceSlider" min="0.5" max="10" step="0.5" value="3" />
+    <span class="slider-value" id="worldPriceValue"></span>
+  </div>
+
+  <div class="slider-container">
+    <label for="tariffSlider">Tariff (t)</label>
+    <input type="range" id="tariffSlider" min="0" max="8" step="0.5" value="1" />
+    <span class="slider-value" id="tariffValue"></span>
+  </div>
 </div>
 
 <div class="plot-container" id="myPlot"></div>
 
+<div class="footnote">
+  The tariff is modeled for a small importing country. If the tariff is prohibitive, the domestic price is capped at the autarky price and imports fall to zero.
+</div>
+
 <script>
-// -------------------------------------------------------
-// Global parameters (initial values from sliders)
-let Ad = parseFloat(document.getElementById("demandSlider").value);
-let b  = parseFloat(document.getElementById("demandSlopeSlider").value);
-let As = parseFloat(document.getElementById("supplySlider").value);
-let c  = parseFloat(document.getElementById("supplySlopeSlider").value);
-let Pw = parseFloat(document.getElementById("worldPriceSlider").value);
-let t  = parseFloat(document.getElementById("tariffSlider").value);
+  function fmt(x) {
+    return Number(x).toFixed(2);
+  }
 
-// Display initial slider values
-document.getElementById("demandValue").textContent = Ad;
-document.getElementById("demandSlopeValue").textContent = b;
-document.getElementById("supplyValue").textContent = As;
-document.getElementById("supplySlopeValue").textContent = c;
-document.getElementById("worldPriceValue").textContent = Pw;
-document.getElementById("tariffValue").textContent = t;
+  function clampNonNegative(x) {
+    return Math.max(0, x);
+  }
 
-// -------------------------------------------------------
-// 1) Model Functions & Plotting Setup
-// -------------------------------------------------------
+  function updateSliderLabels() {
+    document.getElementById("demandValue").textContent = document.getElementById("demandSlider").value;
+    document.getElementById("demandSlopeValue").textContent = document.getElementById("demandSlopeSlider").value;
+    document.getElementById("supplyValue").textContent = document.getElementById("supplySlider").value;
+    document.getElementById("supplySlopeValue").textContent = document.getElementById("supplySlopeSlider").value;
+    document.getElementById("worldPriceValue").textContent = document.getElementById("worldPriceSlider").value;
+    document.getElementById("tariffValue").textContent = document.getElementById("tariffSlider").value;
+  }
 
-// Demand: P = Ad - b*Q
-// Supply: P = As + c*Q
-// Domestic Price: PD = Pw + t
-const Q_MAX = 30;
-let Q_vals = [];
-for (let i = 0; i <= Q_MAX; i++) {
-  Q_vals.push(i);
-}
+  function getParams() {
+    return {
+      Ad: parseFloat(document.getElementById("demandSlider").value),
+      b:  parseFloat(document.getElementById("demandSlopeSlider").value),
+      As: parseFloat(document.getElementById("supplySlider").value),
+      c:  parseFloat(document.getElementById("supplySlopeSlider").value),
+      Pw: parseFloat(document.getElementById("worldPriceSlider").value),
+      t:  parseFloat(document.getElementById("tariffSlider").value)
+    };
+  }
 
-// -------------------------------------------------------
-// 2) Main function: compute plot data and layout
-// -------------------------------------------------------
-function computePlotData(Ad, b, As, c, Pw, t) {
-  const PD = Pw + t; // Domestic Price
-  
-  // Compute Demand & Supply curves:
-  let demandY = Q_vals.map(Q => Ad - b * Q);
-  let supplyY = Q_vals.map(Q => As + c * Q);
-  
-  // Equilibrium at PD:
-  // Demand: PD = Ad - b*Qd  => Qd = (Ad - PD)/b
-  // Supply: PD = As + c*Qs  => Qs = (PD - As)/c
-  let Qd = (Ad - PD) / b;
-  let Qs = (PD - As) / c;
-  let QdT = Qd < 0 ? 0 : Qd;
-  let QsT = Qs < 0 ? 0 : Qs;
-  
-  // Calculate Consumer Surplus (CS) and Producer Surplus (PS)
-  // CS = 0.5*(Ad - PD)*Qd, PS = 0.5*(PD - As)*Qs
-  let CS = 0.5 * (Ad - PD) * QdT;
-  let PS = 0.5 * (PD - As) * QsT;
-  
-  // Create horizontal lines for world price & domestic price
-  let linePW = { x: [0, Q_MAX], y: [Pw, Pw] };
-  let linePD = { x: [0, Q_MAX], y: [PD, PD] };
-  
-  // Build Plotly traces
-  let data = [
-    {
-      x: Q_vals,
-      y: demandY,
-      mode: 'lines',
-      name: 'Demand',
-      line: { color: 'blue' }
-    },
-    {
-      x: Q_vals,
-      y: supplyY,
-      mode: 'lines',
-      name: 'Supply',
-      line: { color: 'green' }
-    },
-    {
-      x: linePW.x,
-      y: linePW.y,
-      mode: 'lines',
-      name: `World Price (Pw=${Pw})`,
-      line: { color: 'red', dash: 'dot' }
-    },
-    {
-      x: linePD.x,
-      y: linePD.y,
-      mode: 'lines',
-      name: `Domestic Price (Pw+t=${PD})`,
-      line: { color: 'orange', dash: 'dash' }
+  function computeEconomics(Ad, b, As, c, Pw, t) {
+    const eps = 1e-9;
+
+    const Paut = (Ad * c + As * b) / (b + c);
+    const Qaut = (Ad - As) / (b + c);
+
+    const P0 = Pw;
+    const Qd0 = clampNonNegative((Ad - P0) / b);
+    const Qs0 = clampNonNegative((P0 - As) / c);
+
+    const isImporter = Pw < Paut - eps;
+    const PD = isImporter ? Math.min(Pw + t, Paut) : Pw;
+    const effectiveTariff = isImporter ? Math.max(PD - Pw, 0) : 0;
+
+    const Qd = clampNonNegative((Ad - PD) / b);
+    const Qs = clampNonNegative((PD - As) / c);
+    const M  = clampNonNegative(Qd - Qs);
+
+    const CS = 0.5 * clampNonNegative(Ad - PD) * Qd;
+    const PS = 0.5 * clampNonNegative(PD - As) * Qs;
+    const GR = effectiveTariff * M;
+
+    const productionDWL = 0.5 * Math.max(Qs - Qs0, 0) * effectiveTariff;
+    const consumptionDWL = 0.5 * Math.max(Qd0 - Qd, 0) * effectiveTariff;
+
+    return {
+      Ad, b, As, c, Pw, t,
+      Paut, Qaut,
+      P0, Qd0, Qs0,
+      PD, effectiveTariff,
+      Qd, Qs, M, CS, PS, GR,
+      productionDWL, consumptionDWL,
+      isImporter
+    };
+  }
+
+  function buildPlot(result) {
+    const {
+      Ad, b, As, c, Pw,
+      Paut, PD, Qd, Qs,
+      Qd0, Qs0,
+      isImporter,
+      effectiveTariff,
+      productionDWL, consumptionDWL,
+      CS, PS, GR
+    } = result;
+
+    const qMaxCandidate = Math.max(10, result.Qaut, Qd0, Qs0, Qd, Qs);
+    const qMax = Math.ceil(qMaxCandidate * 1.25 + 2);
+
+    const Q_vals = Array.from({ length: qMax + 1 }, (_, i) => i);
+
+    const demandY = Q_vals.map(Q => Ad - b * Q);
+    const supplyY = Q_vals.map(Q => As + c * Q);
+
+    const yMax = Math.max(Ad, Paut, PD, Pw) + 2;
+    const yMin = Math.min(0, As - 1, Pw - 2);
+
+    const traces = [
+      {
+        x: Q_vals,
+        y: demandY,
+        mode: "lines",
+        name: "Demand",
+        line: { color: "blue", width: 3 }
+      },
+      {
+        x: Q_vals,
+        y: supplyY,
+        mode: "lines",
+        name: "Supply",
+        line: { color: "green", width: 3 }
+      },
+      {
+        x: [0, qMax],
+        y: [Pw, Pw],
+        mode: "lines",
+        name: `World Price (Pw = ${fmt(Pw)})`,
+        line: { color: "red", dash: "dot", width: 2 }
+      }
+    ];
+
+    if (Math.abs(PD - Pw) > 1e-9 || result.t > 0) {
+      traces.push({
+        x: [0, qMax],
+        y: [PD, PD],
+        mode: "lines",
+        name: `Domestic Price (PD = ${fmt(PD)})`,
+        line: { color: "orange", dash: "dash", width: 2 }
+      });
     }
+
+    // Consumer Surplus
+    if (Qd > 0 && Ad > PD) {
+      traces.push({
+        x: [0, 0, Qd, 0],
+        y: [Ad, PD, PD, Ad],
+        fill: "toself",
+        fillcolor: "rgba(0, 0, 255, 0.12)",
+        line: { color: "rgba(0,0,255,0)" },
+        hoverinfo: "skip",
+        name: "Consumer Surplus"
+      });
+    }
+
+    // Producer Surplus
+    if (Qs > 0 && PD > As) {
+      traces.push({
+        x: [0, 0, Qs, 0],
+        y: [As, PD, PD, As],
+        fill: "toself",
+        fillcolor: "rgba(0, 128, 0, 0.12)",
+        line: { color: "rgba(0,128,0,0)" },
+        hoverinfo: "skip",
+        name: "Producer Surplus"
+      });
+    }
+
+    // Government Revenue
+    if (isImporter && result.M > 0 && effectiveTariff > 0) {
+      traces.push({
+        x: [Qs, Qd, Qd, Qs, Qs],
+        y: [Pw, Pw, PD, PD, Pw],
+        fill: "toself",
+        fillcolor: "rgba(255, 165, 0, 0.18)",
+        line: { color: "rgba(255,165,0,0)" },
+        hoverinfo: "skip",
+        name: "GR"
+      });
+    }
+
+    // Production DWL
+    if (isImporter && effectiveTariff > 0 && productionDWL > 0) {
+      traces.push({
+        x: [Qs0, Qs, Qs, Qs0],
+        y: [Pw, Pw, PD, Pw],
+        fill: "toself",
+        fillcolor: "rgba(128, 128, 128, 0.22)",
+        line: { color: "rgba(128,128,128,0)" },
+        hoverinfo: "skip",
+        name: "Production DWL"
+      });
+    }
+
+    // Consumption DWL
+    if (isImporter && effectiveTariff > 0 && consumptionDWL > 0) {
+      traces.push({
+        x: [Qd, Qd0, Qd, Qd],
+        y: [Pw, Pw, PD, Pw],
+        fill: "toself",
+        fillcolor: "rgba(128, 128, 128, 0.22)",
+        line: { color: "rgba(128,128,128,0)" },
+        hoverinfo: "skip",
+        name: "Consumption DWL"
+      });
+    }
+
+    const shapes = [
+      {
+        type: "line",
+        x0: Qd,
+        x1: Qd,
+        y0: yMin,
+        y1: PD,
+        line: { color: "blue", dash: "dot", width: 1 }
+      },
+      {
+        type: "line",
+        x0: Qs,
+        x1: Qs,
+        y0: yMin,
+        y1: PD,
+        line: { color: "green", dash: "dot", width: 1 }
+      }
+    ];
+
+    if (Math.abs(Qd0 - Qd) > 1e-9) {
+      shapes.push({
+        type: "line",
+        x0: Qd0,
+        x1: Qd0,
+        y0: yMin,
+        y1: Pw,
+        line: { color: "blue", dash: "dash", width: 1 }
+      });
+    }
+
+    if (Math.abs(Qs0 - Qs) > 1e-9) {
+      shapes.push({
+        type: "line",
+        x0: Qs0,
+        x1: Qs0,
+        y0: yMin,
+        y1: Pw,
+        line: { color: "green", dash: "dash", width: 1 }
+      });
+    }
+
+
+
+    const infoBlock = `
+        <span style="color:blue;"><b>D</b>: P = ${fmt(Ad)} - ${fmt(b)}Q</span><br>
+        <span style="color:green;"><b>S</b>: P = ${fmt(As)} + ${fmt(c)}Q</span><br>
+        <span style="color:blue;"><b>CS</b> = ${fmt(CS)}</span><br>
+        <span style="color:green;"><b>PS</b> = ${fmt(PS)}</span><br>
+        <span style="color:darkorange;"><b>GR</b> = ${fmt(GR)}</span>
+    `;
+
+    const annotations = [
+        {
+            x: Qd,
+            y: PD,
+            text: `Q<sub>d</sub> = ${fmt(Qd)}`,
+            showarrow: true,
+            arrowhead: 2,
+            ax: 35,
+            ay: -30
+        },
+        {
+            x: Qs,
+            y: PD,
+            text: `Q<sub>s</sub> = ${fmt(Qs)}`,
+            showarrow: true,
+            arrowhead: 2,
+            ax: -35,
+            ay: 30
+        },
+        {
+            x: qMax * 0.82,
+            y: Paut,
+            text: `P<sub>aut</sub> = ${fmt(Paut)}`,
+            showarrow: false,
+            font: { size: 12, color: "#222" }
+        },
+        {
+            xref: "paper",
+            yref: "paper",
+            x: 0.98,
+            y: 0.98,
+            xanchor: "right",
+            yanchor: "top",
+            align: "left",
+            text: infoBlock,
+            showarrow: false,
+            bgcolor: "rgba(255,255,255,0.88)",
+            bordercolor: "#999",
+            borderwidth: 0.5,
+            borderpad: 0,
+            font: { size: 12, color: "#222" }
+        }
+    ];
+
+
+
+
+    const layout = {
+      title: "Economic Effects of Tariffs",
+      xaxis: {
+        title: "Quantity (Q)",
+        range: [0, qMax],
+        zeroline: false
+      },
+      yaxis: {
+        title: "Price (P)",
+        range: [yMin, yMax],
+        zeroline: false
+      },
+      shapes: shapes,
+      annotations: annotations,
+      legend: {
+        orientation: "h",
+        y: -0.18
+      },
+      margin: {
+        t: 60,
+        r: 20,
+        l: 60,
+        b: 90
+      }
+    };
+
+    return { traces, layout };
+  }
+
+  function updateAll() {
+    updateSliderLabels();
+
+    const { Ad, b, As, c, Pw, t } = getParams();
+    const result = computeEconomics(Ad, b, As, c, Pw, t);
+
+    const plot = buildPlot(result);
+    Plotly.react("myPlot", plot.traces, plot.layout, { responsive: true });
+  }
+
+  const sliderIds = [
+    "demandSlider",
+    "demandSlopeSlider",
+    "supplySlider",
+    "supplySlopeSlider",
+    "worldPriceSlider",
+    "tariffSlider"
   ];
-  
-  // Annotations for Qd and Qs at PD
-  let annotations = [];
-  annotations.push({
-    x: QdT,
-    y: PD,
-    xanchor: 'left',
-    yanchor: 'top',
-    text: `Q<sub>d</sub> = ${QdT.toFixed(2)}`,
-    showarrow: true,
-    arrowhead: 2,
-    ax: 30,
-    ay: -30
-  });
-  annotations.push({
-    x: QsT,
-    y: PD,
-    xanchor: 'right',
-    yanchor: 'bottom',
-    text: `Q<sub>s</sub> = ${QsT.toFixed(2)}`,
-    showarrow: true,
-    arrowhead: 2,
-    ax: -30,
-    ay: 30
-  });
-  
-  // Additional annotations for Consumer Surplus and Producer Surplus.
-  // Place them in the upper region of the graph.
-  const layout_y_max = Math.max(Ad, PD) + 5;
-  annotations.push({
-    x: Q_MAX * 0.65,
-    y: layout_y_max * 0.95,
-    text: `CS = ${CS.toFixed(2)}`,
-    showarrow: false,
-    font: { color: "blue", size: 14 }
-  });
-  annotations.push({
-    x: Q_MAX * 0.65,
-    y: layout_y_max * 0.90,
-    text: `PS = ${PS.toFixed(2)}`,
-    showarrow: false,
-    font: { color: "green", size: 14 }
-  });
-  
-  // Return data and layout
-  return {
-    data: data,
-    layout: {
-      title: `Economic Effects of Tariffs: Ad=${Ad}, b=${b}, As=${As}, c=${c}, Pw=${Pw}, t=${t}`,
-      xaxis: { title: 'Quantity (Q)', range: [0, Q_MAX] },
-      yaxis: { title: 'Price (P)', range: [0, layout_y_max] },
-      annotations: annotations
-    }
-  };
-}
 
-// -------------------------------------------------------
-// 3) Initialize the Plot
-// -------------------------------------------------------
-function initPlot() {
-  const params = computePlotData(Ad, b, As, c, Pw, t);
-  Plotly.newPlot('myPlot', params.data, params.layout);
-}
+  sliderIds.forEach(id => {
+    document.getElementById(id).addEventListener("input", updateAll);
+  });
 
-// -------------------------------------------------------
-// 4) Update the Plot when any slider changes
-// -------------------------------------------------------
-function updatePlot() {
-  Ad = parseFloat(document.getElementById("demandSlider").value);
-  b  = parseFloat(document.getElementById("demandSlopeSlider").value);
-  As = parseFloat(document.getElementById("supplySlider").value);
-  c  = parseFloat(document.getElementById("supplySlopeSlider").value);
-  Pw = parseFloat(document.getElementById("worldPriceSlider").value);
-  t  = parseFloat(document.getElementById("tariffSlider").value);
-  
-  // Update displayed slider values
-  document.getElementById("demandValue").textContent = Ad;
-  document.getElementById("demandSlopeValue").textContent = b;
-  document.getElementById("supplyValue").textContent = As;
-  document.getElementById("supplySlopeValue").textContent = c;
-  document.getElementById("worldPriceValue").textContent = Pw;
-  document.getElementById("tariffValue").textContent = t;
-  
-  const params = computePlotData(Ad, b, As, c, Pw, t);
-  Plotly.react('myPlot', params.data, params.layout);
-}
-
-// -------------------------------------------------------
-// 5) Attach event listeners to all sliders
-// -------------------------------------------------------
-document.getElementById("demandSlider").addEventListener("input", updatePlot);
-document.getElementById("demandSlopeSlider").addEventListener("input", updatePlot);
-document.getElementById("supplySlider").addEventListener("input", updatePlot);
-document.getElementById("supplySlopeSlider").addEventListener("input", updatePlot);
-document.getElementById("worldPriceSlider").addEventListener("input", updatePlot);
-document.getElementById("tariffSlider").addEventListener("input", updatePlot);
-
-// -------------------------------------------------------
-// 6) On page load, initialize the plot
-// -------------------------------------------------------
-initPlot();
+  updateAll();
 </script>
 
 </body>

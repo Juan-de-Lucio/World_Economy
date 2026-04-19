@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Global Value Chains (Countries A, B, C)</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 900px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .slider-container {
+      margin: 10px 0;
+      text-align: center;
+    }
+    .slider-label {
+      margin-right: 10px;
+    }
+    .slider-value {
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    #sankey {
+      width: 900px;
+      height: 600px;
+      margin: 30px auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Global Value Chains (Countries A, B, C)</h1>
+  <p>Adjust the sliders to set the raw flow values between the countries. The diagram below updates in real time. Additional arrows (annotations) show total exports and exports in value added (using a 60% rate) for countries A and B.</p>
+  
+  <div class="slider-container">
+    <label class="slider-label" for="flowAB">Flow from A to B:</label>
+    <input type="range" id="flowAB" min="0" max="100" step="1" value="50">
+    <span class="slider-value" id="flowABValue">50</span>
+  </div>
+  
+  <div class="slider-container">
+    <label class="slider-label" for="flowBC">Flow from B to C:</label>
+    <input type="range" id="flowBC" min="0" max="100" step="1" value="40">
+    <span class="slider-value" id="flowBCValue">40</span>
+  </div>
+  
+  <div class="slider-container">
+    <label class="slider-label" for="flowAC">Flow from A to C:</label>
+    <input type="range" id="flowAC" min="0" max="100" step="1" value="20">
+    <span class="slider-value" id="flowACValue">20</span>
+  </div>
+  
+  <div class="slider-container">
+    <label class="slider-label" for="flowBA">Exports from B to A:</label>
+    <input type="range" id="flowBA" min="0" max="100" step="1" value="10">
+    <span class="slider-value" id="flowBAValue">10</span>
+  </div>
+  
+  <div id="sankey"></div>
+  
+  <script>
+    function updateSankey() {
+      // Retrieve raw slider values
+      var flowAB = parseFloat(document.getElementById("flowAB").value);
+      var flowBC = parseFloat(document.getElementById("flowBC").value);
+      var flowAC = parseFloat(document.getElementById("flowAC").value);
+      var flowBA = parseFloat(document.getElementById("flowBA").value);
+      
+      // Update slider display values
+      document.getElementById("flowABValue").textContent = flowAB;
+      document.getElementById("flowBCValue").textContent = flowBC;
+      document.getElementById("flowACValue").textContent = flowAC;
+      document.getElementById("flowBAValue").textContent = flowBA;
+      
+      // Calculate total exports for each country:
+      // For Country A: exports = A→B + A→C.
+      // For Country B: exports = B→C + B→A.
+      // Country C: no exports defined.
+      var exportA = flowAB + flowAC;
+      var exportB = flowBC + flowBA;
+      
+      // Assume a fixed value added rate of 60%
+      var vaRate = 0.6;
+      var va_exportA = vaRate * exportA;
+      var va_exportB = vaRate * exportB;
+      
+      // Define Sankey nodes (countries A, B, C)
+      // We manually set node positions so we can annotate them
+      var data = {
+        type: "sankey",
+        orientation: "h",
+        node: {
+          pad: 15,
+          thickness: 20,
+          line: { color: "black", width: 0.5 },
+          label: ["A", "B", "C"],
+          color: ["#1f77b4", "#ff7f0e", "#2ca02c"],
+          // Manually set node positions (relative to paper coordinates)
+          x: [0, 0.5, 1],
+          y: [0.5, 0.5, 0.5]
+        },
+        link: {
+          // Flows:
+          // A→B, B→C, A→C, B→A.
+          source: [0, 1, 0, 1],
+          target: [1, 2, 2, 0],
+          value: [flowAB, flowBC, flowAC, flowBA],
+          label: [
+            "A to B: " + flowAB,
+            "B to C: " + flowBC,
+            "A to C: " + flowAC,
+            "B to A: " + flowBA
+          ]
+        }
+      };
+      
+      // Add extra annotations to show total exports and value added exports for A and B.
+      // We use paper coordinates (x:0 to 1, y:0 to 1) relative to the diagram.
+      // Node positions: A at (0,0.5), B at (0.5, 0.5).
+      var extraAnnotations = [
+        {
+          x: 0, y: 0.5,
+          xref: 'paper', yref: 'paper',
+          text: "Exports A: " + exportA.toFixed(2) + "<br>VA: " + va_exportA.toFixed(2),
+          showarrow: true,
+          arrowhead: 3,
+          ax: 40, ay: -40,
+          font: { color: "black", size: 14 }
+        },
+        {
+          x: 0.5, y: 0.5,
+          xref: 'paper', yref: 'paper',
+          text: "Exports B: " + exportB.toFixed(2) + "<br>VA: " + va_exportB.toFixed(2),
+          showarrow: true,
+          arrowhead: 3,
+          ax: 40, ay: -40,
+          font: { color: "black", size: 14 }
+        }
+      ];
+      
+      var layout = {
+        title: "Global Value Chain Flows (Raw Values)",
+        font: { size: 12 },
+        annotations: extraAnnotations
+      };
+      
+      Plotly.react("sankey", [data], layout);
+    }
+    
+    // Attach event listeners to sliders
+    document.getElementById("flowAB").addEventListener("input", updateSankey);
+    document.getElementById("flowBC").addEventListener("input", updateSankey);
+    document.getElementById("flowAC").addEventListener("input", updateSankey);
+    document.getElementById("flowBA").addEventListener("input", updateSankey);
+    
+    // Initialize the diagram on page load
+    updateSankey();
+  </script>
+</body>
+</html>

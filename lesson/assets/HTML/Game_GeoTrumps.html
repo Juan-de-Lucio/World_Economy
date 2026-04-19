@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoTrumps Cooperativo</title>
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --panel: #fffdfa;
+      --ink: #2c2a28;
+      --muted: #6d655d;
+      --accent: #7a3e2f;
+      --accent-2: #c7a27c;
+      --good: #2e7d32;
+      --warn: #b26a00;
+      --bad: #b71c1c;
+      --line: #d8cfc5;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #f4efe8 0%, #efe7dc 100%);
+      color: var(--ink);
+    }
+    header { padding: 24px 20px 8px; text-align: center; }
+    h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 3vw, 2.8rem); color: var(--accent); }
+    .subtitle { color: var(--muted); max-width: 900px; margin: 0 auto; line-height: 1.45; }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+    .top-scoreboard { max-width: 1400px; margin: 0 auto; padding: 0 20px 8px; display:grid; grid-template-columns: repeat(2, minmax(180px, 260px)); gap:12px; justify-content:center; }
+    .chart-wrap { margin-top: 10px; }
+    #evolutionChart { width: 100%; height: 320px; border:1px solid var(--line); border-radius: 12px; background:#fff; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+    .left { position: sticky; top: 12px; align-self: start; display: grid; gap: 16px; }
+    .controls, .status, .log-panel, .history-panel, .scoreboard { display: grid; gap: 12px; }
+    button {
+      border: 0; border-radius: 12px; padding: 12px 14px; font-weight: 700; cursor: pointer;
+      background: var(--accent); color: #fff; transition: transform .05s ease, opacity .15s ease;
+    }
+    button:hover { opacity: .95; }
+    button:active { transform: translateY(1px); }
+    button.secondary { background: #6b7280; }
+    button.ghost { background: #ece5dc; color: var(--ink); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .small { font-size: .92rem; color: var(--muted); }
+    .bars { display: grid; gap: 10px; }
+    .bar-row { display: grid; gap: 6px; }
+    .bar-head { display: flex; justify-content: space-between; align-items: center; font-size: .95rem; font-weight: 700; }
+    .track { height: 14px; border-radius: 999px; overflow: hidden; background: #ebe3d8; border: 1px solid #dccfbe; }
+    .fill { height: 100%; width: 0%; transition: width .3s ease; }
+    .fill.pressure { background: linear-gradient(90deg, #457b9d, #1d3557); }
+    .fill.cost { background: linear-gradient(90deg, #f4a261, #e76f51); }
+    .fill.escalation { background: linear-gradient(90deg, #ffb703, #d00000); }
+    .fill.cohesion { background: linear-gradient(90deg, #7cb518, #2d6a4f); }
+    .main { display: grid; gap: 20px; }
+    .top-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; }
+    .log-top .log { max-height: 220px; }
+    .mission-title { display: flex; align-items: start; justify-content: space-between; gap: 14px; }
+    .badge {
+      display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: .82rem; font-weight: 700;
+      background: #efe2d5; color: var(--accent); border: 1px solid #ddc7b3;
+    }
+    .mission-body { line-height: 1.5; }
+    .meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+    .meta { background: #faf5ef; border: 1px solid var(--line); border-radius: 12px; padding: 10px; font-size: .92rem; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card {
+      border: 2px solid #d8cfc5; border-radius: 18px; background: linear-gradient(180deg, #fffdf9 0%, #f7efe4 100%);
+      padding: 14px; box-shadow: var(--shadow); display: grid; gap: 10px; position: relative; min-height: 315px;
+    }
+    .card.selected { border-color: var(--accent); outline: 3px solid rgba(122,62,47,.12); }
+    .card-header { display: flex; justify-content: space-between; gap: 10px; }
+    .card-title { font-weight: 800; font-size: 1rem; color: #3d2f27; }
+    .type {
+      font-size: .75rem; font-weight: 700; color: #6b4d3a;
+      background: #eedccc; border: 1px solid #dac0a7; padding: 4px 8px; border-radius: 999px; align-self: start;
+    }
+    .stats { display: grid; gap: 8px; }
+    .stat { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: .92rem; }
+    .effect { background: rgba(255,255,255,.65); border: 1px solid #e3d7ca; border-radius: 12px; padding: 10px; font-size: .9rem; line-height: 1.45; }
+    .effect b { color: #5c3829; }
+    .active-tag {
+      position: absolute; right: 10px; bottom: 10px; background: #e3f6e7; color: #1b5e20; font-size: .76rem; font-weight: 800;
+      border: 1px solid #b7dfbf; border-radius: 999px; padding: 5px 8px;
+    }
+    .active-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .mini { background: #fbf7f1; border: 1px solid var(--line); border-radius: 14px; padding: 10px; font-size: .9rem; }
+    .mini strong { color: var(--accent); }
+    .log, .history-list { max-height: 380px; overflow: auto; padding-right: 6px; font-size: .92rem; line-height: 1.45; }
+    .log-entry, .history-entry { padding: 10px 0; border-bottom: 1px dashed #ddd1c3; }
+    .footer-note { color: var(--muted); font-size: .88rem; }
+    .turn-pill {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3e8db; border: 1px solid #dcc5af;
+      border-radius: 999px; font-weight: 800; color: #5d3a2d;
+    }
+    .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0 4px; }
+    .tab-btn { background: #ece5dc; color: var(--ink); }
+    .tab-btn.active { background: var(--accent); color: #fff; }
+    .selection-note { color: var(--muted); font-size: .9rem; margin-top: 6px; }
+    .score-row { display:flex; justify-content:space-between; align-items:center; background:#faf5ef; border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-weight:700; }
+    .score-num { font-size:1.25rem; color: var(--accent); }
+    .history-section h4 { margin: 0 0 8px; color: var(--accent); }
+    .history-empty { color: var(--muted); font-size: .9rem; }
+    @media (max-width: 1100px) {
+      .wrap, .top-grid { grid-template-columns: 1fr; }
+      .left { position: static; }
+      .top-scoreboard { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GeoTrumps cooperativo</h1>
+    <p class="subtitle">Aplicación web en HTML para jugar en clase a un juego cooperativo de geoeconomía. El equipo debe responder a crisis internacionales usando instrumentos de sanción y de colaboración, sin provocar demasiada escalada ni dañar en exceso su propia economía.</p>
+  </header>
+
+
+  <section class="top-scoreboard">
+    <div class="panel scoreboard">
+      <div class="score-row"><span>Éxitos</span><span id="successCount" class="score-num">0</span></div>
+    </div>
+    <div class="panel scoreboard">
+      <div class="score-row"><span>Fracasos</span><span id="failureCount" class="score-num">0</span></div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <aside class="left">
+      <section class="panel controls">
+        <div class="turn-pill">Turno <span id="turn">1</span> / <span id="maxTurns">5</span></div>
+        <button id="newGameBtn">Nueva partida</button>
+        <button id="playBtn">Jugar cartas seleccionadas</button>
+        <button id="nextBtn" class="secondary" disabled>Siguiente turno</button>
+        <button id="clearBtn" class="ghost">Limpiar selección</button>
+        <div class="small">Selecciona hasta <b>2 cartas</b> por ronda. Puedes combinar cartas de <b>sanción</b> y de <b>colaboración</b>.</div>
+      </section>
+
+      <section class="panel status">
+        <h3>Indicadores</h3>
+        <div class="bars">
+          <div class="bar-row">
+            <div class="bar-head"><span>Presión sobre el rival</span><span id="pressureVal">0 / 10</span></div>
+            <div class="track"><div class="fill pressure" id="pressureBar"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-head"><span>Coste interno</span><span id="costVal">0 / 10</span></div>
+            <div class="track"><div class="fill cost" id="costBar"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-head"><span>Escalada</span><span id="escalationVal">0 / 10</span></div>
+            <div class="track"><div class="fill escalation" id="escalationBar"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-head"><span>Cohesión de la alianza</span><span id="cohesionVal">5 / 10</span></div>
+            <div class="track"><div class="fill cohesion" id="cohesionBar"></div></div>
+          </div>
+        </div>
+        <div class="footer-note">Cada escenario tiene su propio número de turnos y sus propios criterios de derrota. El resultado del turno se calcula en cada ronda y el gráfico aparece al finalizar el último turno del escenario.</div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section class="panel log-panel log-top">
+        <h3>Registro de la partida</h3>
+        <div id="log" class="log"></div>
+      </section>
+
+      <section class="top-grid">
+        <section class="panel">
+          <div class="mission-title">
+            <div>
+              <span class="badge" id="missionType">Crisis</span>
+              <h2 id="missionTitle">Misión actual</h2>
+            </div>
+            <div class="badge" id="missionGoal">Objetivo</div>
+          </div>
+          <div class="mission-body" id="missionText"></div>
+          <div class="meta-grid">
+            <div class="meta"><strong>Límite de turnos</strong><br><span id="missionTurns"></span></div>
+            <div class="meta"><strong>Derrota si...</strong><br><span id="missionLose"></span></div>
+            <div class="meta"><strong>Consejo</strong><br><span id="missionTip"></span></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Cartas activas</h3>
+          <div id="activeCards" class="active-cards"></div>
+          <p class="small">Las medidas activas siguen aplicando sus efectos al inicio de cada turno mientras les quede duración.</p>
+        </section>
+      </section>
+
+
+
+      <section class="panel chart-wrap" id="chartSection" style="display:none;">
+        <h3>Evolución de los indicadores</h3>
+        <canvas id="evolutionChart" width="900" height="320"></canvas>
+        <p class="small">El gráfico aparece al terminar todos los turnos del escenario activo.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Cartas de instrumentos</h2>
+        <div class="tabs">
+          <button id="tabSanctions" class="tab-btn active">Instrumentos de sanciones</button>
+          <button id="tabCollab" class="tab-btn">Instrumentos de colaboración</button>
+        </div>
+        <p class="small">Selecciona una o dos cartas para responder a la crisis. Puedes cambiar de pestaña para combinar cartas de ambos tipos.</p>
+        <div class="selection-note" id="selectionNote"></div>
+        <div id="cardsGrid" class="cards-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const sanctions = [
+      {
+        id: 'dolar', name: 'Sanciones basadas en el dólar', type: 'Financiera · Sanción',
+        pressure: 4, cost: 1, escalation: 1, cohesion: 0, duration: 3,
+        desc: 'Aprovecha la centralidad del dólar y del sistema financiero internacional para restringir pagos, crédito y acceso a transacciones globales.'
+      },
+      {
+        id: 'aranceles', name: 'Aranceles', type: 'Comercial · Arancel',
+        pressure: 1, cost: 2, escalation: 1, cohesion: 0, duration: 3,
+        desc: 'Encarece importaciones para proteger o castigar, pero aumenta los costes internos para hogares y empresas.'
+      },
+      {
+        id: 'tierras', name: 'Restricción de tierras raras', type: 'Recursos estratégicos · Restricción',
+        pressure: 4, cost: 1, escalation: 2, cohesion: -1, duration: 3,
+        desc: 'Limita minerales críticos necesarios para tecnología avanzada, baterías y defensa.'
+      },
+      {
+        id: 'seguros', name: 'Sanciones sobre seguros marítimos', type: 'Logística · Disrupción',
+        pressure: 1, cost: 0, escalation: 0, cohesion: 1, duration: 2,
+        desc: 'Complica el transporte internacional sin recurrir a medidas extremas y suele ser más fácil de coordinar con aliados.'
+      },
+      {
+        id: 'chips', name: 'Controles a la exportación de chips', type: 'Tecnológica · Control',
+        pressure: 4, cost: 1, escalation: 2, cohesion: -1, duration: 3,
+        desc: 'Restringe el acceso a semiconductores, software y equipos de alta tecnología.'
+      },
+      {
+        id: 'swift', name: 'Exclusión de sistemas de pago', type: 'Monetaria / pagos · Exclusión',
+        pressure: 4, cost: 1, escalation: 1, cohesion: 0, duration: 2,
+        desc: 'Aísla a bancos y empresas de la infraestructura internacional de pagos y compensación.'
+      },
+      {
+        id: 'secundarias', name: 'Sanciones secundarias', type: 'Financiera · Sanción',
+        pressure: 5, cost: 1, escalation: 2, cohesion: -2, duration: 3,
+        desc: 'Extiende la presión a terceros que comercian con el objetivo, aumentando el alcance pero también la fricción con aliados.'
+      },
+      {
+        id: 'embargo_energia', name: 'Embargo energético', type: 'Energética · Presión',
+        pressure: 4, cost: 3, escalation: 2, cohesion: -1, duration: 2,
+        desc: 'Usa el suministro de energía como palanca geoeconómica, con gran impacto también sobre quien lo impone.'
+      },
+      {
+        id: 'pricecap', name: 'Límite al precio del petróleo', type: 'Energética · Presión',
+        pressure: 2, cost: 1, escalation: 0, cohesion: 1, duration: 3,
+        desc: 'Intenta reducir ingresos energéticos del rival sin provocar un shock total de oferta.'
+      },
+      {
+        id: 'activos', name: 'Congelación de activos', type: 'Financiera · Sanción',
+        pressure: 3, cost: 1, escalation: 1, cohesion: 0, duration: 3,
+        desc: 'Inmoviliza reservas o activos vinculados al actor objetivo.'
+      },
+      {
+        id: 'ormuz', name: 'Cerrar el estrecho de Ormuz', type: 'Logística · Disrupción',
+        pressure: 5, cost: 4, escalation: 4, cohesion: -2, duration: 1,
+        desc: 'Golpe muy fuerte sobre energía y transporte, pero con enorme riesgo de descontrol.'
+      },
+      {
+        id: 'fertilizantes', name: 'Restricción de fertilizantes', type: 'Recursos estratégicos · Restricción',
+        pressure: 3, cost: 2, escalation: 1, cohesion: -1, duration: 2,
+        desc: 'Afecta agricultura y seguridad alimentaria, con consecuencias internacionales amplias.'
+      },
+      {
+        id: 'puertos', name: 'Prohibición de acceso a puertos', type: 'Comercial · Restricción',
+        pressure: 3, cost: 1, escalation: 1, cohesion: 0, duration: 2,
+        desc: 'Bloquea operaciones logísticas y encarece el comercio del objetivo.'
+      },
+      {
+        id: 'licencias', name: 'Restricción de licencias tecnológicas', type: 'Tecnológica · Control',
+        pressure: 3, cost: 1, escalation: 1, cohesion: 0, duration: 3,
+        desc: 'Impide acceso a conocimiento, software o componentes clave.'
+      }
+    ];
+
+    const collaboration = [
+      {
+        id: 'acuerdo_comercial', name: 'Acuerdo comercial de emergencia', type: 'Comercial · Cooperación',
+        pressure: 2, cost: -1, escalation: -1, cohesion: 1, duration: 3,
+        desc: 'Abre mercados alternativos y refuerza la coordinación entre socios, reduciendo tensiones internas y mejorando la resiliencia.'
+      },
+      {
+        id: 'diversificacion', name: 'Diversificación de proveedores', type: 'Logística · Resiliencia',
+        pressure: 1, cost: -2, escalation: 0, cohesion: 0, duration: 4,
+        desc: 'Reduce la dependencia de un único origen y amortigua el impacto interno de la crisis.'
+      },
+      {
+        id: 'reserva_estrategica', name: 'Liberación de reservas estratégicas', type: 'Energética · Estabilización',
+        pressure: 1, cost: -2, escalation: 0, cohesion: -1, duration: 2,
+        desc: 'Suaviza el shock sobre precios y abastecimiento para ganar tiempo sin elevar la confrontación.'
+      },
+      {
+        id: 'mediacion', name: 'Mediación diplomática coordinada', type: 'Diplomática · Desescalada',
+        pressure: 1, cost: 0, escalation: -2, cohesion: 1, duration: 2,
+        desc: 'Mantiene la presión política mientras reduce el riesgo de espiral conflictiva y fortalece la alianza.'
+      },
+      {
+        id: 'inversion', name: 'Control de inversiones estratégicas', type: 'Inversión · Control',
+        pressure: 2, cost: 0, escalation: 0, cohesion: 0, duration: 4,
+        desc: 'Reduce vulnerabilidades a largo plazo limitando adquisiciones o inversiones sensibles.'
+      },
+      {
+        id: 'subsidios', name: 'Subsidios industriales de emergencia', type: 'Industrial · Subsidio',
+        pressure: 1, cost: 1, escalation: 0, cohesion: 0, duration: 4,
+        desc: 'Fortalece capacidades propias y reduce dependencia estratégica con un enfoque defensivo.'
+      },
+      {
+        id: 'compras_conjuntas', name: 'Compras conjuntas con aliados', type: 'Comercial · Cooperación',
+        pressure: 1, cost: -1, escalation: 0, cohesion: 1, duration: 3,
+        desc: 'Mejora poder de negociación, reparte costes y reduce tensiones dentro de la coalición.'
+      },
+      {
+        id: 'corredor_logistico', name: 'Corredor logístico alternativo', type: 'Logística · Cooperación',
+        pressure: 1, cost: -1, escalation: 0, cohesion: 0, duration: 3,
+        desc: 'Reorganiza rutas y puertos con apoyo de socios para sostener el comercio y disminuir vulnerabilidades.'
+      }
+    ];
+
+    const allInstruments = [...sanctions, ...collaboration];
+
+    const crises = [
+      {
+        id: 'minerales', type: 'Recursos estratégicos', title: 'Crisis de minerales críticos',
+        text: 'Una potencia rival restringe exportaciones de minerales críticos esenciales para baterías, defensa y semiconductores. Tu coalición debe responder rápidamente sin dividir a los aliados.',
+        targetPressure: 8, maxTurns: 6, defeat: { cost: 9, escalation: 6, cohesion: 1 },
+        loseText: 'Derrota si Coste interno ≥ 9, Escalada ≥ 6 o Cohesión ≤ 1.',
+        tip: 'Combina presión tecnológica o financiera con medidas sostenibles.'
+      },
+      {
+        id: 'energia', type: 'Energía', title: 'Shock energético internacional',
+        text: 'Una ruta energética clave queda amenazada y el precio del petróleo se dispara. Necesitas castigar al rival sin hundir a tu propia economía.',
+        targetPressure: 7, maxTurns: 5, defeat: { cost: 8, escalation: 5, cohesion: 2 },
+        loseText: 'Derrota si Coste interno ≥ 8, Escalada ≥ 5 o Cohesión ≤ 2.',
+        tip: 'Las cartas de colaboración pueden amortiguar el golpe interno.'
+      },
+      {
+        id: 'tecnologia', type: 'Tecnología', title: 'Carrera por la supremacía tecnológica',
+        text: 'El rival acelera su capacidad militar-industrial mediante importaciones de chips, software y equipos avanzados. Debes frenar su acceso con una respuesta coordinada.',
+        targetPressure: 9, maxTurns: 7, defeat: { cost: 10, escalation: 7, cohesion: 1 },
+        loseText: 'Derrota si Coste interno ≥ 10, Escalada ≥ 7 o Cohesión ≤ 1.',
+        tip: 'Los controles tecnológicos son poderosos, pero conviene sostenerlos con cooperación entre aliados.'
+      },
+      {
+        id: 'agresion', type: 'Seguridad', title: 'Agresión regional y respuesta económica',
+        text: 'Tras una violación grave del derecho internacional, la coalición debe responder con instrumentos económicos creíbles y duraderos.',
+        targetPressure: 8, maxTurns: 5, defeat: { cost: 9, escalation: 7, cohesion: 2 },
+        loseText: 'Derrota si Coste interno ≥ 9, Escalada ≥ 7 o Cohesión ≤ 2.',
+        tip: 'Las sanciones financieras pueden dar resultados rápidos; las cartas de colaboración ayudan a sostener la coalición.'
+      }
+    ];
+
+    const events = [
+      { text: 'Coordinación aliada: la cohesión de la alianza aumenta en +1.', apply: s => s.cohesion = floor0(s.cohesion + 1) },
+      { text: 'Reacción electoral interna: el coste interno aumenta en +2.', apply: s => s.cost = floor0(s.cost + 2) },
+      { text: 'Mercados se adaptan: la presión sobre el rival se reduce en -1.', apply: s => s.pressure = floor0(s.pressure - 1) },
+      { text: 'Represalia diplomática: la escalada aumenta en +1.', apply: s => s.escalation = floor0(s.escalation + 1) },
+      { text: 'Diversificación espontánea de proveedores: el coste interno baja en -1.', apply: s => s.cost = floor0(s.cost - 1) },
+      { text: 'Desacuerdo entre socios: la cohesión baja en -1.', apply: s => s.cohesion = floor0(s.cohesion - 1) }
+    ];
+
+    const gameScore = { success: 0, failure: 0 };
+    let state = {};
+
+    function floor0(v) { return Math.max(0, v); }
+    function sample(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function nowTime() { return new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); }
+
+    function pushHistory() {
+      if (!state.history) state.history = [];
+      state.history.push({
+        turn: state.turn,
+        pressure: state.pressure,
+        cost: state.cost,
+        escalation: state.escalation,
+        cohesion: state.cohesion
+      });
+    }
+
+    function drawChart() {
+      const canvas = document.getElementById('evolutionChart');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0,0,w,h);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,w,h);
+      const pad = {l:50,r:20,t:20,b:40};
+      const plotW = w-pad.l-pad.r, plotH = h-pad.t-pad.b;
+      const series = state.history || [];
+      const maxVal = Math.max(10, ...series.flatMap(p => [p.pressure,p.cost,p.escalation,p.cohesion]));
+      ctx.strokeStyle = '#d8cfc5';
+      ctx.lineWidth = 1;
+      for (let i=0;i<=5;i++) {
+        const y = pad.t + plotH - (i/5)*plotH;
+        ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.stroke();
+        ctx.fillStyle = '#6d655d'; ctx.font = '12px sans-serif';
+        ctx.fillText(String(Math.round((i/5)*maxVal)), 12, y+4);
+      }
+      if (!series.length) return;
+      const labels = series.map((_,i)=> i===0 ? 'Inicio' : `T${i}`);
+      labels.forEach((lab, i) => {
+        const x = pad.l + (series.length===1 ? plotW/2 : (i/(series.length-1))*plotW);
+        ctx.fillStyle = '#6d655d'; ctx.fillText(lab, x-10, h-14);
+      });
+      const lines = [
+        {key:'pressure', color:'#1d3557', name:'Presión'},
+        {key:'cost', color:'#e76f51', name:'Coste'},
+        {key:'escalation', color:'#d00000', name:'Escalada'},
+        {key:'cohesion', color:'#2d6a4f', name:'Cohesión'}
+      ];
+      function xy(i, val) {
+        const x = pad.l + (series.length===1 ? plotW/2 : (i/(series.length-1))*plotW);
+        const y = pad.t + plotH - (val/maxVal)*plotH;
+        return [x,y];
+      }
+      lines.forEach(line => {
+        ctx.strokeStyle = line.color; ctx.lineWidth = 2.5; ctx.beginPath();
+        series.forEach((p,i)=>{ const [x,y]=xy(i,p[line.key]); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+        ctx.stroke();
+        series.forEach((p,i)=>{ const [x,y]=xy(i,p[line.key]); ctx.fillStyle=line.color; ctx.beginPath(); ctx.arc(x,y,3.2,0,Math.PI*2); ctx.fill(); });
+      });
+      let lx = pad.l; const ly = h-30;
+      lines.forEach(line => {
+        ctx.fillStyle = line.color; ctx.fillRect(lx, ly-8, 14, 4);
+        ctx.fillStyle = '#2c2a28'; ctx.fillText(line.name, lx+18, ly);
+        lx += 95;
+      });
+    }
+
+
+    function newGame() {
+      const crisis = structuredClone(sample(crises));
+      state = {
+        crisis,
+        turn: 1,
+        maxTurns: crisis.maxTurns,
+        pressure: 0,
+        cost: 0,
+        escalation: 0,
+        cohesion: 5,
+        selected: [],
+        active: [],
+        playedThisTurn: false,
+        log: [],
+        ended: false,
+        currentTab: 'sanctions',
+        history: [],
+        turnResults: {}
+      };
+      gameScore.success = 0;
+      gameScore.failure = 0;
+      renderHistory();
+      pushHistory();
+      log(`Nueva misión: <b>${crisis.title}</b>. Objetivo de presión: <b>${crisis.targetPressure}</b>.`);
+      render();
+    }
+
+    function log(html) {
+      state.log.unshift({ html, time: nowTime() });
+      renderLog();
+    }
+
+    function addHistory(kind) {
+      if (kind === 'success') gameScore.success += 1;
+      else if (kind === 'failure') gameScore.failure += 1;
+      renderHistory();
+    }
+
+    function renderHistory() {
+      document.getElementById('successCount').textContent = gameScore.success;
+      document.getElementById('failureCount').textContent = gameScore.failure;
+    }
+
+    function renderMission() {
+      document.getElementById('missionType').textContent = state.crisis.type;
+      document.getElementById('missionTitle').textContent = state.crisis.title;
+      document.getElementById('missionText').textContent = state.crisis.text;
+      document.getElementById('missionGoal').textContent = `Objetivo: presión ${state.crisis.targetPressure}`;
+      document.getElementById('missionTurns').textContent = `${state.maxTurns} turnos`; 
+      document.getElementById('missionLose').textContent = state.crisis.loseText;
+      document.getElementById('missionTip').textContent = state.crisis.tip;
+      document.getElementById('turn').textContent = state.turn;
+      document.getElementById('maxTurns').textContent = state.maxTurns;
+    }
+
+    function renderBars() {
+      const pct = v => `${Math.min(v, 10) / 10 * 100}%`;
+      document.getElementById('pressureBar').style.width = pct(state.pressure);
+      document.getElementById('costBar').style.width = pct(state.cost);
+      document.getElementById('escalationBar').style.width = pct(state.escalation);
+      document.getElementById('cohesionBar').style.width = pct(state.cohesion);
+      document.getElementById('pressureVal').textContent = `${state.pressure} / 10`;
+      document.getElementById('costVal').textContent = `${state.cost} / 10`;
+      document.getElementById('escalationVal').textContent = `${state.escalation} / 10`;
+      document.getElementById('cohesionVal').textContent = `${state.cohesion} / 10`;
+    }
+
+    function currentDeck() {
+      return state.currentTab === 'sanctions' ? sanctions : collaboration;
+    }
+
+    function renderTabs() {
+      document.getElementById('tabSanctions').classList.toggle('active', state.currentTab === 'sanctions');
+      document.getElementById('tabCollab').classList.toggle('active', state.currentTab === 'collaboration');
+      document.getElementById('selectionNote').textContent = state.selected.length
+        ? `Cartas seleccionadas: ${state.selected.map(id => allInstruments.find(c => c.id === id)?.name).join(' · ')}`
+        : 'No hay cartas seleccionadas.';
+    }
+
+    function renderCards() {
+      const grid = document.getElementById('cardsGrid');
+      grid.innerHTML = '';
+      currentDeck().forEach(card => {
+        const selected = state.selected.includes(card.id);
+        const active = state.active.find(a => a.id === card.id);
+        const el = document.createElement('article');
+        el.className = `card ${selected ? 'selected' : ''}`;
+        el.innerHTML = `
+          <div class="card-header">
+            <div class="card-title">${card.name}</div>
+            <div class="type">${card.type}</div>
+          </div>
+          <div class="stats">
+            <div class="stat"><span>Presión</span><strong>${card.pressure >= 0 ? '+' : ''}${card.pressure}</strong></div>
+            <div class="stat"><span>Coste interno</span><strong>${card.cost >= 0 ? '+' : ''}${card.cost}</strong></div>
+            <div class="stat"><span>Escalada</span><strong>${card.escalation >= 0 ? '+' : ''}${card.escalation}</strong></div>
+            <div class="stat"><span>Cohesión</span><strong>${card.cohesion >= 0 ? '+' : ''}${card.cohesion}</strong></div>
+            <div class="stat"><span>Duración</span><strong>${card.duration} turno(s)</strong></div>
+          </div>
+          <div class="effect"><b>Descripción:</b> ${card.desc}</div>
+          ${active ? `<div class="active-tag">Activa · ${active.remaining} turno(s)</div>` : ''}
+        `;
+        el.addEventListener('click', () => toggleCard(card.id));
+        grid.appendChild(el);
+      });
+    }
+
+    function renderActiveCards() {
+      const box = document.getElementById('activeCards');
+      if (!state.active.length) {
+        box.innerHTML = '<div class="small">No hay medidas activas en este momento.</div>';
+        return;
+      }
+      box.innerHTML = state.active.map(a => `
+        <div class="mini">
+          <strong>${a.name}</strong><br>
+          Presión ${a.pressure >= 0 ? '+' : ''}${a.pressure}, Coste ${a.cost >= 0 ? '+' : ''}${a.cost}, Escalada ${a.escalation >= 0 ? '+' : ''}${a.escalation}, Cohesión ${a.cohesion >= 0 ? '+' : ''}${a.cohesion}<br>
+          <span class="small">Duración restante: ${a.remaining} turno(s)</span>
+        </div>
+      `).join('');
+    }
+
+    function renderLog() {
+      const logEl = document.getElementById('log');
+      logEl.innerHTML = state.log.map(entry => `<div class="log-entry"><b>${entry.time}</b> · ${entry.html}</div>`).join('');
+    }
+
+    function renderControls() {
+      const finalTurnPlayed = state.turn >= state.maxTurns && state.playedThisTurn;
+      document.getElementById('playBtn').disabled = state.selected.length === 0 || state.playedThisTurn || state.ended;
+      document.getElementById('nextBtn').disabled = !state.playedThisTurn || state.ended || finalTurnPlayed;
+    }
+
+    function isScenarioFinished() {
+      return Boolean(state && state.maxTurns && state.turn >= state.maxTurns && state.playedThisTurn);
+    }
+
+    function render() {
+      if (isScenarioFinished() && !state.ended) finalizeGame();
+      renderMission();
+      renderBars();
+      renderTabs();
+      renderCards();
+      renderActiveCards();
+      renderControls();
+      renderLog();
+      renderHistory();
+      const showChart = Boolean(state.ended || isScenarioFinished());
+      document.getElementById('chartSection').style.display = showChart ? 'block' : 'none';
+      if (showChart) {
+        drawChart();
+        setTimeout(drawChart, 0);
+      }
+    }
+
+    function toggleCard(id) {
+      if (state.playedThisTurn || state.ended) return;
+      if (state.selected.includes(id)) {
+        state.selected = state.selected.filter(x => x !== id);
+      } else {
+        if (state.selected.length >= 2) return;
+        state.selected.push(id);
+      }
+      renderTabs();
+      renderCards();
+      renderControls();
+    }
+
+    function applyCardEffects(cards, fromActive = false) {
+      cards.forEach(card => {
+        state.pressure = floor0(state.pressure + card.pressure);
+        state.cost = floor0(state.cost + card.cost);
+        state.escalation = floor0(state.escalation + card.escalation);
+        state.cohesion = floor0(state.cohesion + card.cohesion);
+      });
+      if (cards.length) {
+        const names = cards.map(c => c.name).join(', ');
+        log(`${fromActive ? 'Siguen activas' : 'Se juegan'}: <b>${names}</b>.`);
+      }
+    }
+
+    function startTurnWithActiveEffects() {
+      const activeToApply = state.active.filter(a => a.remaining > 0);
+      if (activeToApply.length) applyCardEffects(activeToApply, true);
+    }
+
+    function decayActive() {
+      state.active.forEach(a => a.remaining -= 1);
+      state.active = state.active.filter(a => a.remaining > 0);
+    }
+
+    function evaluateCurrentTurn() {
+      if (state.turnResults[state.turn]) return;
+      const reachedGoal = state.pressure >= state.crisis.targetPressure;
+      const failedCost = state.cost >= state.crisis.defeat.cost;
+      const failedEscalation = state.escalation >= state.crisis.defeat.escalation;
+      const failedCohesion = state.cohesion <= state.crisis.defeat.cohesion;
+      const hasFailure = failedCost || failedEscalation || failedCohesion;
+
+      state.turnResults[state.turn] = {
+        success: reachedGoal,
+        failure: hasFailure,
+        reasons: {
+          cost: failedCost,
+          escalation: failedEscalation,
+          cohesion: failedCohesion
+        }
+      };
+
+      if (reachedGoal) {
+        addHistory('success');
+        log(`<span style="color:#2e7d32"><b>Resultado del turno ${state.turn}:</b> éxito.</span>`);
+      }
+
+      if (hasFailure) {
+        addHistory('failure');
+        const reasons = [];
+        if (failedCost) reasons.push('coste interno elevado');
+        if (failedEscalation) reasons.push('escalada excesiva');
+        if (failedCohesion) reasons.push('ruptura de la alianza');
+        log(`<span style="color:#b71c1c"><b>Resultado del turno ${state.turn}:</b> fracaso${reasons.length ? ' por ' + reasons.join(', ') : ''}.</span>`);
+      }
+
+      if (!reachedGoal && !hasFailure) {
+        log(`<span style="color:#b26a00"><b>Resultado del turno ${state.turn}:</b> sin éxito ni fracaso en este turno.</span>`);
+      }
+    }
+
+    function playSelected() {
+      const cards = allInstruments.filter(c => state.selected.includes(c.id));
+      applyCardEffects(cards, false);
+      cards.forEach(card => {
+        const existing = state.active.find(a => a.id === card.id);
+        if (existing) existing.remaining = Math.max(existing.remaining, card.duration - 1);
+        else if (card.duration > 1) state.active.push({ ...card, remaining: card.duration - 1 });
+      });
+      const event = sample(events);
+      event.apply(state);
+      log(`<span style="color:#1565c0"><b>Evento:</b> ${event.text}</span>`);
+      state.playedThisTurn = true;
+      state.selected = [];
+      pushHistory();
+      evaluateCurrentTurn();
+
+      if (state.turn >= state.maxTurns) {
+        finalizeGame();
+      }
+      render();
+    }
+
+    function nextTurn() {
+      if (!state.playedThisTurn || state.ended) return;
+      if (state.turn >= state.maxTurns) return;
+      state.turn += 1;
+      state.playedThisTurn = false;
+      decayActive();
+      startTurnWithActiveEffects();
+      pushHistory();
+      render();
+    }
+
+    function finalizeGame() {
+      if (state.ended) return true;
+
+      const alreadyHasFinalPoint = state.history && state.history.length && state.history[state.history.length - 1].turn === state.turn
+        && state.history[state.history.length - 1].pressure === state.pressure
+        && state.history[state.history.length - 1].cost === state.cost
+        && state.history[state.history.length - 1].escalation === state.escalation
+        && state.history[state.history.length - 1].cohesion === state.cohesion;
+
+      if (!alreadyHasFinalPoint) {
+        pushHistory();
+      }
+
+      state.ended = true;
+      const summary = `<b>Marcador final:</b> ${gameScore.success} éxitos y ${gameScore.failure} fracasos en ${state.maxTurns} turnos.`;
+      if (gameScore.success > gameScore.failure) {
+        log(`<span style="color:#2e7d32"><b>Balance final favorable.</b> ${summary}</span>`);
+      } else if (gameScore.success < gameScore.failure) {
+        log(`<span style="color:#b71c1c"><b>Balance final desfavorable.</b> ${summary}</span>`);
+      } else {
+        log(`<span style="color:#b26a00"><b>Balance final equilibrado.</b> ${summary}</span>`);
+      }
+      return true;
+    }
+
+    document.getElementById('newGameBtn').addEventListener('click', newGame);
+    document.getElementById('playBtn').addEventListener('click', playSelected);
+    document.getElementById('nextBtn').addEventListener('click', nextTurn);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (state.playedThisTurn || state.ended) return;
+      state.selected = [];
+      renderTabs();
+      renderCards();
+      renderControls();
+    });
+    document.getElementById('tabSanctions').addEventListener('click', () => { state.currentTab = 'sanctions'; renderTabs(); renderCards(); });
+    document.getElementById('tabCollab').addEventListener('click', () => { state.currentTab = 'collaboration'; renderTabs(); renderCards(); });
+
+    newGame();
+  </script>
+</body>
+</html>

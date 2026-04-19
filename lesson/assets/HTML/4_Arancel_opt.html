@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arancel óptimo: áreas de bienestar</title>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 24px;
+      max-width: 1300px;
+      color: #222;
+    }
+    h1 {
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      margin-top: 0;
+      color: #555;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+      align-items: start;
+    }
+    .charts {
+      display: grid;
+      gap: 20px;
+    }
+    #chart, #welfareChart {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
+    #chart {
+      height: 720px;
+    }
+    #welfareChart {
+      height: 380px;
+    }
+    .panel {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 16px;
+      background: #fafafa;
+      position: sticky;
+      top: 12px;
+    }
+    .control {
+      margin-bottom: 18px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 8px 0;
+      font-size: 15px;
+    }
+    .value {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    .small {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.4;
+    }
+    .formula {
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 10px;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+    .legend-note {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.45;
+    }
+    .btn {
+      margin-top: 10px;
+      width: 100%;
+      border: 1px solid #bbb;
+      background: white;
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn:hover {
+      background: #f2f2f2;
+    }
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .panel {
+        position: static;
+      }
+      #chart {
+        height: 620px;
+      }
+      #welfareChart {
+        height: 340px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Arancel: recaudación, pérdida de eficiencia y ganancia por términos de intercambio</h1>
+  <p class="subtitle">Esquema interactivo con demanda de importaciones (MD) y oferta exportadora (XS).</p>
+
+  <div class="layout">
+    <div class="charts">
+      <div id="chart"></div>
+      <div id="welfareChart"></div>
+    </div>
+
+    <div class="panel">
+      <div class="control">
+        <label for="tariff"><strong>Arancel (t)</strong>: <span id="tariffValue" class="value">2.00</span></label>
+        <input id="tariff" type="range" min="0" max="5" step="0.1" value="2.0" />
+      </div>
+
+      <div class="control">
+        <label for="elasticity"><strong>Elasticidad de XS</strong>: <span id="elasticityValue" class="value">1.50</span></label>
+        <input id="elasticity" type="range" min="1.3" max="5" step="0.1" value="1.5" />
+      </div>
+
+      <div class="row"><span>Pendiente implícita de XS (D)</span><span id="Dvalue" class="value"></span></div>
+      <div class="row"><span>Precio mundial libre comercio P<sub>w</sub></span><span id="Pw" class="value"></span></div>
+      <div class="row"><span>Precio interior con arancel P<sub>d</sub></span><span id="Pd" class="value"></span></div>
+      <div class="row"><span>Precio exterior P<sub>f</sub></span><span id="Pf" class="value"></span></div>
+      <div class="row"><span>Importaciones libres Q<sub>w</sub></span><span id="Qw" class="value"></span></div>
+      <div class="row"><span>Importaciones con arancel Q<sub>t</sub></span><span id="Qt" class="value"></span></div>
+
+      <hr>
+
+      <div class="row"><span>Recaudación</span><span id="Revenue" class="value"></span></div>
+      <div class="row"><span>Ganancia T.I.</span><span id="TOT" class="value"></span></div>
+      <div class="row"><span>Pérdida de eficiencia</span><span id="DWL" class="value"></span></div>
+      <div class="row"><span><strong>Bienestar nacional</strong></span><span id="Net" class="value"></span></div>
+
+      <button id="clearPoints" class="btn" type="button">Borrar puntos del gráfico de bienestar</button>
+
+      <div class="legend-note">
+        La recaudación es el rectángulo entre <em>P<sub>f</sub></em> y <em>P<sub>d</sub></em> hasta <em>Q<sub>t</sub></em>.<br>
+        La ganancia por términos de intercambio es la parte de esa recaudación asociada a la caída de <em>P<sub>f</sub></em> respecto a <em>P<sub>w</sub></em>.<br>
+        La pérdida de eficiencia es la suma de los dos triángulos generados por la reducción del comercio.
+      </div>
+
+      <div class="formula">
+MD: P = A − BQ
+XS: P = C + DQ
+
+Elasticidad de XS en libre comercio:
+ε = Pw / (D · Qw)
+
+D = (B·C) / ( ε·(A−C) − A )
+
+Con arancel:
+Pd = Pf + t
+Qt = (A − C − t)/(B + D)
+
+Ganancia T.I. = (Pw − Pf) · Qt
+Pérdida ef. = triángulo superior + triángulo inferior
+Bienestar nacional = Ganancia T.I. − Pérdida ef.
+      </div>
+
+      <p class="small">
+        Parámetros fijos: <strong>A = 10</strong>, <strong>B = 1</strong>, <strong>C = 2</strong>.
+        La elasticidad elegida recalcula la pendiente <strong>D</strong> de la oferta exportadora.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const A = 10, B = 1, C = 2;
+    const tariffMax = 5;
+
+    let historyPoints = [];
+    let lastPointKey = null;
+    let lastElasticity = null;
+
+    function clamp(x, lo, hi) {
+      return Math.max(lo, Math.min(hi, x));
+    }
+
+    function fmt(x) {
+      return Number(x).toFixed(2);
+    }
+
+    function computeDFromElasticity(epsilon) {
+      const denom = epsilon * (A - C) - A;
+      return (B * C) / denom;
+    }
+
+    function mdPrice(q) {
+      return A - B * q;
+    }
+
+    function xsPrice(q, D) {
+      return C + D * q;
+    }
+
+    function getWorldValues(D) {
+      const Qw = (A - C) / (B + D);
+      const Pw = mdPrice(Qw);
+      return { Qw, Pw };
+    }
+
+    function compute(t, D) {
+      const { Qw, Pw } = getWorldValues(D);
+
+      const Qt = Math.max((A - C - t) / (B + D), 0);
+      const Pd = mdPrice(Qt);
+      const Pf = xsPrice(Qt, D);
+
+      const revenue = t * Qt;
+      const totGain = (Pw - Pf) * Qt;
+
+      const upperDWL = 0.5 * Math.max(Qw - Qt, 0) * Math.max(Pd - Pw, 0);
+      const lowerDWL = 0.5 * Math.max(Qw - Qt, 0) * Math.max(Pw - Pf, 0);
+      const dwl = upperDWL + lowerDWL;
+      const net = totGain - dwl;
+
+      return {
+        t, D, Qw, Pw, Qt, Pd, Pf,
+        revenue, totGain, upperDWL, lowerDWL, dwl, net
+      };
+    }
+
+    function polygonTrace(x, y, name, fillcolor, linecolor, opacity, hovertext) {
+      return {
+        x, y,
+        type: 'scatter',
+        mode: 'lines',
+        fill: 'toself',
+        name,
+        fillcolor,
+        line: { color: linecolor, width: 1.2 },
+        opacity,
+        hoverinfo: 'text',
+        text: x.map(() => hovertext),
+        hovertemplate: '%{text}<extra></extra>'
+      };
+    }
+
+    function buildMainFigure(t, epsilon) {
+      const D = computeDFromElasticity(epsilon);
+      const s = compute(t, D);
+
+      const qMax = Math.max(8, s.Qw * 2.1, s.Qt * 2.2);
+      const qCurve = [];
+      const mdCurve = [];
+      const xsCurve = [];
+
+      for (let q = 0; q <= qMax; q += 0.02) {
+        qCurve.push(q);
+        mdCurve.push(mdPrice(q));
+        xsCurve.push(xsPrice(q, D));
+      }
+
+      const yMax = Math.max(
+        A + 1,
+        s.Pd + 1.5,
+        s.Pw + 1.5,
+        xsPrice(Math.min(qMax, Math.max(s.Qw, s.Qt) + 1), D) + 1
+      );
+
+      const baseTraces = [
+        {
+          x: qCurve, y: mdCurve,
+          type: 'scatter',
+          mode: 'lines',
+          name: 'Demanda de importaciones (MD)',
+          line: { width: 3, color: '#1f77b4' }
+        },
+        {
+          x: qCurve, y: xsCurve,
+          type: 'scatter',
+          mode: 'lines',
+          name: 'Oferta exportadora (XS)',
+          line: { width: 3, color: '#2ca02c' }
+        }
+      ];
+
+      const revenue = polygonTrace(
+        [0, s.Qt, s.Qt, 0],
+        [s.Pf, s.Pf, s.Pd, s.Pd],
+        'Recaudación',
+        'rgba(44, 123, 182, 0.22)',
+        'rgba(44, 123, 182, 0.85)',
+        1,
+        'Recaudación pública'
+      );
+
+      const tot = polygonTrace(
+        [0, s.Qt, s.Qt, 0],
+        [s.Pf, s.Pf, s.Pw, s.Pw],
+        'Ganancia por términos de intercambio',
+        'rgba(102, 189, 99, 0.35)',
+        'rgba(102, 189, 99, 0.95)',
+        1,
+        'Ganancia por términos de intercambio'
+      );
+
+      const dwlTop = polygonTrace(
+        [s.Qt, s.Qt, s.Qw],
+        [s.Pd, s.Pw, s.Pw],
+        'Pérdida de eficiencia (consumo)',
+        'rgba(215, 48, 39, 0.35)',
+        'rgba(215, 48, 39, 0.95)',
+        1,
+        'Pérdida de eficiencia: triángulo superior'
+      );
+
+      const dwlBottom = polygonTrace(
+        [s.Qt, s.Qt, s.Qw],
+        [s.Pf, s.Pw, s.Pw],
+        'Pérdida de eficiencia (producción)',
+        'rgba(253, 174, 97, 0.45)',
+        'rgba(253, 174, 97, 0.95)',
+        1,
+        'Pérdida de eficiencia: triángulo inferior'
+      );
+
+      const pointFreeTrade = {
+        x: [s.Qw], y: [s.Pw],
+        type: 'scatter',
+        mode: 'markers+text',
+        name: 'Libre comercio',
+        text: ['Libre comercio'],
+        textposition: 'top right',
+        marker: { size: 10, symbol: 'circle', color: '#111' },
+        hovertemplate: 'Libre comercio<br>Qw=%{x:.2f}<br>Pw=%{y:.2f}<extra></extra>'
+      };
+
+      const pointDomestic = {
+        x: [s.Qt], y: [s.Pd],
+        type: 'scatter',
+        mode: 'markers+text',
+        name: 'Precio interior con arancel',
+        text: ['Con arancel'],
+        textposition: 'top right',
+        marker: { size: 10, symbol: 'circle', color: '#7f7f7f' },
+        hovertemplate: 'Con arancel<br>Qt=%{x:.2f}<br>Pd=%{y:.2f}<extra></extra>'
+      };
+
+      const pointForeign = {
+        x: [s.Qt], y: [s.Pf],
+        type: 'scatter',
+        mode: 'markers',
+        name: 'Precio exterior',
+        marker: { size: 10, symbol: 'circle', color: '#7f7f7f' },
+        hovertemplate: 'Precio exterior<br>Qt=%{x:.2f}<br>Pf=%{y:.2f}<extra></extra>'
+      };
+
+      const layout = {
+        margin: { l: 70, r: 30, t: 30, b: 60 },
+        xaxis: {
+          title: 'Cantidad de importaciones',
+          range: [0, qMax]
+        },
+        yaxis: {
+          title: 'Precio',
+          range: [0, yMax]
+        },
+        legend: {
+          orientation: 'h',
+          yanchor: 'bottom',
+          y: 1.02,
+          xanchor: 'left',
+          x: 0
+        },
+        shapes: [
+          { type: 'line', x0: 0, x1: s.Qw, y0: s.Pw, y1: s.Pw, line: { dash: 'dash', width: 1.4 } },
+          { type: 'line', x0: 0, x1: s.Qt, y0: s.Pd, y1: s.Pd, line: { dash: 'dot', width: 1.4 } },
+          { type: 'line', x0: 0, x1: s.Qt, y0: s.Pf, y1: s.Pf, line: { dash: 'dot', width: 1.4 } },
+          { type: 'line', x0: s.Qw, x1: s.Qw, y0: 0, y1: s.Pw, line: { dash: 'dot', width: 1.2 } },
+          { type: 'line', x0: s.Qt, x1: s.Qt, y0: 0, y1: s.Pd, line: { dash: 'dot', width: 1.2 } }
+        ],
+        annotations: [
+          { x: 0.25, y: s.Pw, text: 'Pw', showarrow: false, yshift: 10, font: { size: 14 } },
+          { x: 0.25, y: s.Pd, text: 'Pd', showarrow: false, yshift: 10, font: { size: 14 } },
+          { x: 0.25, y: s.Pf, text: 'Pf', showarrow: false, yshift: 10, font: { size: 14 } },
+          { x: s.Qw, y: 0.25, text: 'Qw', showarrow: false, font: { size: 14 } },
+          { x: s.Qt, y: 0.25, text: 'Qt', showarrow: false, font: { size: 14 } },
+          {
+            x: s.Qt + Math.max(qMax * 0.03, 0.18),
+            y: (s.Pd + s.Pf) / 2,
+            text: 't',
+            showarrow: true,
+            ax: 18,
+            ay: 0,
+            arrowhead: 2,
+            arrowsize: 1
+          }
+        ],
+        hovermode: 'closest'
+      };
+
+      return {
+        data: [revenue, tot, dwlTop, dwlBottom, ...baseTraces, pointFreeTrade, pointDomestic, pointForeign],
+        layout,
+        stats: s
+      };
+    }
+
+    function buildWelfareFigure(epsilon, currentT) {
+      const D = computeDFromElasticity(epsilon);
+
+      const tCurve = [];
+      const netCurve = [];
+      for (let t = 0; t <= tariffMax + 1e-9; t += 0.05) {
+        const s = compute(t, D);
+        tCurve.push(Number(t.toFixed(4)));
+        netCurve.push(s.net);
+      }
+
+      const currentStats = compute(currentT, D);
+
+      const historyT = historyPoints.map(p => p.t);
+      const historyNet = historyPoints.map(p => p.net);
+
+      const ymin = Math.min(...netCurve, ...(historyNet.length ? historyNet : [0]), currentStats.net);
+      const ymax = Math.max(...netCurve, ...(historyNet.length ? historyNet : [0]), currentStats.net);
+      const pad = Math.max((ymax - ymin) * 0.12, 0.3);
+
+      const data = [
+        {
+          x: tCurve,
+          y: netCurve,
+          type: 'scatter',
+          mode: 'lines',
+          name: 'Curva de bienestar nacional',
+          line: { width: 3, color: '#6a3d9a' },
+          hovertemplate: 't=%{x:.2f}<br>Bienestar=%{y:.2f}<extra></extra>'
+        },
+        {
+          x: historyT,
+          y: historyNet,
+          type: 'scatter',
+          mode: 'markers',
+          name: 'Puntos visitados',
+          marker: {
+            size: 8,
+            color: '#ff7f00',
+            line: { width: 1, color: '#fff' }
+          },
+          hovertemplate: 'Visitado<br>t=%{x:.2f}<br>Bienestar=%{y:.2f}<extra></extra>'
+        },
+        {
+          x: [currentT],
+          y: [currentStats.net],
+          type: 'scatter',
+          mode: 'markers+text',
+          name: 'Punto actual',
+          text: ['Actual'],
+          textposition: 'top center',
+          marker: {
+            size: 12,
+            color: '#d62728',
+            line: { width: 1.5, color: '#fff' }
+          },
+          hovertemplate: 'Actual<br>t=%{x:.2f}<br>Bienestar=%{y:.2f}<extra></extra>'
+        }
+      ];
+
+      const layout = {
+        title: 'Arancel y bienestar nacional',
+        margin: { l: 70, r: 30, t: 50, b: 60 },
+        xaxis: {
+          title: 'Arancel',
+          range: [0, tariffMax]
+        },
+        yaxis: {
+          title: 'Bienestar nacional',
+          range: [ymin - pad, ymax + pad],
+          zeroline: true,
+          zerolinewidth: 1.2
+        },
+        legend: {
+          orientation: 'h',
+          yanchor: 'bottom',
+          y: 1.02,
+          xanchor: 'left',
+          x: 0
+        },
+        shapes: [
+          {
+            type: 'line',
+            x0: 0,
+            x1: tariffMax,
+            y0: 0,
+            y1: 0,
+            line: { dash: 'dot', width: 1.2, color: '#666' }
+          }
+        ],
+        hovermode: 'closest'
+      };
+
+      return { data, layout };
+    }
+
+    function updatePanel(stats, epsilon) {
+      const D = computeDFromElasticity(epsilon);
+
+      document.getElementById('tariffValue').textContent = fmt(stats.t);
+      document.getElementById('elasticityValue').textContent = fmt(epsilon);
+      document.getElementById('Dvalue').textContent = fmt(D);
+
+      document.getElementById('Pw').textContent = fmt(stats.Pw);
+      document.getElementById('Pd').textContent = fmt(stats.Pd);
+      document.getElementById('Pf').textContent = fmt(stats.Pf);
+      document.getElementById('Qw').textContent = fmt(stats.Qw);
+      document.getElementById('Qt').textContent = fmt(stats.Qt);
+      document.getElementById('Revenue').textContent = fmt(stats.revenue);
+      document.getElementById('TOT').textContent = fmt(stats.totGain);
+      document.getElementById('DWL').textContent = fmt(stats.dwl);
+      document.getElementById('Net').textContent = fmt(stats.net);
+    }
+
+    function addHistoryPoint(t, net, epsilon) {
+      const key = `${epsilon.toFixed(4)}|${t.toFixed(4)}`;
+      if (lastPointKey !== key) {
+        historyPoints.push({ t, net });
+        lastPointKey = key;
+      }
+    }
+
+    function draw() {
+      const t = parseFloat(document.getElementById('tariff').value);
+      const epsilon = parseFloat(document.getElementById('elasticity').value);
+
+      if (lastElasticity !== null && Math.abs(lastElasticity - epsilon) > 1e-9) {
+        historyPoints = [];
+        lastPointKey = null;
+      }
+      lastElasticity = epsilon;
+
+      const mainFig = buildMainFigure(t, epsilon);
+      addHistoryPoint(t, mainFig.stats.net, epsilon);
+
+      Plotly.react('chart', mainFig.data, mainFig.layout, {
+        responsive: true,
+        displayModeBar: true
+      });
+
+      const welfareFig = buildWelfareFigure(epsilon, t);
+      Plotly.react('welfareChart', welfareFig.data, welfareFig.layout, {
+        responsive: true,
+        displayModeBar: true
+      });
+
+      updatePanel(mainFig.stats, epsilon);
+    }
+
+    document.getElementById('tariff').addEventListener('input', draw);
+    document.getElementById('elasticity').addEventListener('input', draw);
+
+    document.getElementById('clearPoints').addEventListener('click', () => {
+      historyPoints = [];
+      lastPointKey = null;
+      draw();
+    });
+
+    draw();
+  </script>
+</body>
+</html>

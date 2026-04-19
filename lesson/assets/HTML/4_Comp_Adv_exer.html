@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Economic Effects of Tariffs<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparative Advantage Interactive Exercise</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #dashboard {
+            width: 80%;
+            margin: auto;
+        }
+        canvas {
+            max-width: 700px;
+            margin: 20px auto;
+        }
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 60%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>🌍 Comparative Advantage Interactive Exercise</h2>
+    
+    <table>
+        <tr>
+            <th></th>
+            <th>Good A (Units/Hour)</th>
+            <th>Good B (Units/Hour)</th>
+        </tr>
+        <tr>
+            <td>Country 1</td>
+            <td><input type="number" id="productivityA1" value="10"></td>
+            <td><input type="number" id="productivityB1" value="5"></td>
+        </tr>
+        <tr>
+            <td>Country 2</td>
+            <td><input type="number" id="productivityA2" value="6"></td>
+            <td><input type="number" id="productivityB2" value="12"></td>
+        </tr>
+    </table>
+
+    <h3>Hours Required Per Unit of Product</h3>
+    <table>
+        <tr>
+            <th></th>
+            <th>Hours per Unit of Good A</th>
+            <th>Hours per Unit of Good B</th>
+        </tr>
+        <tr>
+            <td>Country 1</td>
+            <td id="hoursA1"></td>
+            <td id="hoursB1"></td>
+        </tr>
+        <tr>
+            <td>Country 2</td>
+            <td id="hoursA2"></td>
+            <td id="hoursB2"></td>
+        </tr>
+    </table>
+
+    <button onclick="calculateComparativeAdvantage()">🔄 Calculate Comparative Advantage</button>
+
+    <h3 id="result"></h3>
+
+    <div id="dashboard">
+        <canvas id="chart"></canvas>
+    </div>
+
+    <script>
+        function calculateComparativeAdvantage() {
+            const a1 = parseFloat(document.getElementById("productivityA1").value);
+            const b1 = parseFloat(document.getElementById("productivityB1").value);
+            const a2 = parseFloat(document.getElementById("productivityA2").value);
+            const b2 = parseFloat(document.getElementById("productivityB2").value);
+
+            const opportunityCostA1 = (b1 / a1).toFixed(2);
+            const opportunityCostB1 = (a1 / b1).toFixed(2);
+            const opportunityCostA2 = (b2 / a2).toFixed(2);
+            const opportunityCostB2 = (a2 / b2).toFixed(2);
+
+            document.getElementById("hoursA1").innerText = (1 / a1).toFixed(2);
+            document.getElementById("hoursB1").innerText = (1 / b1).toFixed(2);
+            document.getElementById("hoursA2").innerText = (1 / a2).toFixed(2);
+            document.getElementById("hoursB2").innerText = (1 / b2).toFixed(2);
+
+            let advantageMessage = "";
+            if (opportunityCostA1 < opportunityCostA2) {
+                advantageMessage += `Country 1 has a comparative advantage in Good A.\n`;
+            } else {
+                advantageMessage += `Country 2 has a comparative advantage in Good A.\n`;
+            }
+            if (opportunityCostB1 < opportunityCostB2) {
+                advantageMessage += `Country 1 has a comparative advantage in Good B.`;
+            } else {
+                advantageMessage += `Country 2 has a comparative advantage in Good B.`;
+            }
+            document.getElementById("result").innerText = advantageMessage;
+
+            createChart(["Good A", "Good B"], [opportunityCostA1, opportunityCostB1], [opportunityCostA2, opportunityCostB2]);
+        }
+
+        function createChart(labels, data1, data2) {
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (window.myChart) {
+                window.myChart.destroy();
+            }
+            window.myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Country 1",
+                            data: data1,
+                            backgroundColor: 'blue'
+                        },
+                        {
+                            label: "Country 2",
+                            data: data2,
+                            backgroundColor: 'red'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
+</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px auto;
+      max-width: 1100px;
+      line-height: 1.35;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 24px;
+      margin-bottom: 18px;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .slider-container label {
+      min-width: 210px;
+      font-weight: 600;
+    }
+
+    .slider-container input[type="range"] {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .slider-value {
+      min-width: 48px;
+      font-weight: 700;
+    }
+
+    .plot-container {
+      margin-top: 10px;
+    }
+
+    .footnote {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #444;
+    }
+
+    @media (max-width: 900px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+

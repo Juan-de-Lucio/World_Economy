@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>International Trade with Tariffs — Interactive Practice</title>
+  <style>
+    :root{
+      --bg:#f5f6f8;
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --border:#e5e7eb;
+      --accent:#1f5f7a;
+      --ok:#16a34a;
+      --bad:#e11d48;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      padding:12px;
+    }
+    .container{max-width:920px;margin:0 auto}
+    header{text-align:center;margin:4px 0 10px}
+    .subtitle{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+    h1{font-size:18px;font-weight:650;line-height:1.2}
+
+    .practice-area{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:12px;
+      box-shadow:0 8px 20px rgba(0,0,0,.06);
+    }
+
+    .progress{display:flex;justify-content:center;gap:6px;margin:6px 0 10px}
+    .progress-dot{width:8px;height:8px;border-radius:50%;background:#cfd4dc}
+    .progress-dot.completed{background:#22c55e}
+    .progress-dot.current{background:var(--accent);transform:scale(1.2)}
+
+    .question-box{
+      background:#faf7ee;
+      border:1px solid #f0e6c8;
+      border-left:3px solid #d8b04c;
+      padding:10px;
+      border-radius:8px;
+    }
+    .question-box h3{font-size:13px;font-weight:750;color:#6b4e10;margin-bottom:6px}
+    .question-box p{font-size:12px;line-height:1.45;color:#5a4a1a}
+
+    .feedback{margin:8px 0 10px;padding:9px 10px;border-radius:8px;font-size:12px;display:none}
+    .feedback.show{display:block}
+    .feedback.correct{background:#ecfdf3;border:1px solid #86efac;color:#14532d}
+    .feedback.incorrect{background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d}
+
+    .controls-top{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 10px}
+    button{
+      padding:7px 10px;font-size:11px;font-weight:750;border:1px solid var(--border);
+      border-radius:8px;cursor:pointer;background:#fff;color:var(--ink);
+      transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+      text-transform:uppercase;letter-spacing:.05em;
+    }
+    button:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,0,0,.08)}
+    .btn-submit{background:var(--accent);color:#fff;border-color:transparent}
+    .btn-submit:hover{background:#174a60}
+    .btn-next{background:#16a34a;color:#fff;border-color:transparent}
+    .btn-next:hover{background:#15803d}
+    .btn-reset{background:#f3f4f6}
+
+    .graph-container{
+      margin-top:10px;
+      background:#f3f4f6;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:8px;
+      overflow-x:auto;
+    }
+    .svg-wrap{width:640px;margin:0 auto}
+    svg{width:640px;height:auto;display:block}
+
+    svg text{pointer-events:none;user-select:none}
+
+    .clickable-area{cursor:pointer;transition:opacity .15s ease, stroke-width .15s ease}
+    .clickable-area:hover{opacity:.82}
+    .clickable-area.selected{stroke:var(--bad);stroke-width:3}
+    .clickable-area.correct{fill:#22c55e !important;fill-opacity:.45 !important}
+    .clickable-area.incorrect{fill:#fb7185 !important;fill-opacity:.35 !important}
+
+    .clickable-point{cursor:pointer}
+    .clickable-point.base{fill:#fff;stroke:#0d3b4d;stroke-width:2}
+    .clickable-point.correct{fill:#bbf7d0;stroke:var(--ok);stroke-width:3}
+    .clickable-point.incorrect{fill:#fecdd3;stroke:var(--bad);stroke-width:3}
+
+    @media (max-width:480px){
+      h1{font-size:16px}
+      .svg-wrap, svg{width:560px}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div class="subtitle">Juan de Lucio</div>
+      <h1>International Trade with Tariffs — Interactive Practice</h1>
+    </header>
+
+    <div class="practice-area">
+      <div class="progress" id="progress"></div>
+
+      <div class="question-box">
+        <h3 id="question-text">Loading...</h3>
+        <p id="question-description"></p>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+
+      <div class="controls-top">
+        <button class="btn-submit" id="submit-btn" onclick="checkAnswer()">Submit</button>
+        <button class="btn-next" id="next-btn" onclick="nextQuestion()" style="display:none;">Next</button>
+        <button class="btn-reset" id="clear-btn" onclick="clearSelection(true)">Clear</button>
+      </div>
+
+      <div class="graph-container">
+        <div class="svg-wrap">
+          <svg id="trade-svg" viewBox="0 0 700 500" xmlns="http://www.w3.org/2000/svg">
+            <!-- Axes -->
+            <line x1="100" y1="50" x2="100" y2="420" stroke="#0d3b4d" stroke-width="3"/>
+            <line x1="100" y1="420" x2="650" y2="420" stroke="#0d3b4d" stroke-width="3"/>
+
+            <!-- Labels -->
+            <text x="58" y="78" fill="#0d3b4d" font-size="18" font-weight="700" font-style="italic">PRICE</text>
+            <text x="545" y="462" fill="#0d3b4d" font-size="18" font-weight="700" font-style="italic">QUANTITY</text>
+
+            <!-- Curves -->
+            <path id="supply-path" d="" fill="none" stroke="#0d3b4d" stroke-width="4"/>
+            <path id="demand-path" d="" fill="none" stroke="#0d3b4d" stroke-width="4"/>
+
+            <!-- World prices -->
+            <line x1="100" y1="310" x2="650" y2="310" stroke="#0d7a9e" stroke-width="4"/>
+            <text x="475" y="330" fill="#0d7a9e" font-size="13" font-weight="700" font-style="italic">WORLD SUPPLY (Pw)</text>
+
+            <line x1="100" y1="250" x2="650" y2="250" stroke="#0d7a9e" stroke-width="4"/>
+            <text x="405" y="235" fill="#0d7a9e" font-size="12" font-weight="700" font-style="italic">WORLD SUPPLY + TARIFF (Pw+t)</text>
+
+            <!-- Price ticks -->
+            <text x="28" y="315" fill="#0d3b4d" font-size="13" font-weight="700">P<tspan font-size="10" dy="4">W</tspan></text>
+            <line x1="90" y1="310" x2="100" y2="310" stroke="#0d3b4d" stroke-width="2"/>
+
+            <text x="28" y="255" fill="#0d3b4d" font-size="13" font-weight="700">P<tspan font-size="10" dy="4">W</tspan></text>
+            <text x="30" y="269" fill="#0d3b4d" font-size="10" font-weight="700">+ TARIFF</text>
+            <line x1="90" y1="250" x2="100" y2="250" stroke="#0d3b4d" stroke-width="2"/>
+
+            <!-- Autarky price (P0) -->
+            <line id="p0-line" x1="100" y1="240" x2="100" y2="240" stroke="#0d3b4d" stroke-width="2" stroke-dasharray="5,5"/>
+            <text id="p0-label" x="44" y="245" fill="#0d3b4d" font-size="16" font-weight="700">P<tspan font-size="12" dy="4">0</tspan></text>
+            <line id="p0-tick" x1="90" y1="240" x2="100" y2="240" stroke="#0d3b4d" stroke-width="2"/>
+
+            <!-- Vertical dashed lines -->
+            <line id="vline-qs"  x1="200" y1="310" x2="200" y2="420" stroke="#0d3b4d" stroke-width="2" stroke-dasharray="5,5"/>
+            <line id="vline-qd"  x1="500" y1="310" x2="500" y2="420" stroke="#0d3b4d" stroke-width="2" stroke-dasharray="5,5"/>
+            <line id="vline-qst" x1="300" y1="250" x2="300" y2="420" stroke="#0d3b4d" stroke-width="2" stroke-dasharray="5,5"/>
+            <line id="vline-qdt" x1="400" y1="250" x2="400" y2="420" stroke="#0d3b4d" stroke-width="2" stroke-dasharray="5,5"/>
+            <line id="vline-q0"  x1="360" y1="240" x2="360" y2="420" stroke="#0d3b4d" stroke-width="2" stroke-dasharray="5,5"/>
+
+            <!-- Quantity labels -->
+            <text id="lbl-qs"  x="200" y="444" fill="#0d3b4d" font-size="13" font-weight="700">Q<tspan font-size="10" dy="4">s</tspan></text>
+            <text id="lbl-qd"  x="500" y="444" fill="#0d3b4d" font-size="13" font-weight="700">Q<tspan font-size="10" dy="4">d</tspan></text>
+            <text id="lbl-qst" x="300" y="460" fill="#0d3b4d" font-size="11" font-weight="700">Q<tspan font-size="9" dy="4">s+t</tspan></text>
+            <text id="lbl-qdt" x="400" y="460" fill="#0d3b4d" font-size="11" font-weight="700">Q<tspan font-size="9" dy="4">d+t</tspan></text>
+            <text id="lbl-q0"  x="360" y="444" fill="#0d3b4d" font-size="13" font-weight="700">Q<tspan font-size="10" dy="4">0</tspan></text>
+
+            <!-- AREAS (fixed set) -->
+            <polygon id="area-A" class="clickable-area" points="" fill="#87ceeb" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-A" font-size="11" font-weight="800" fill="#0d3b4d">A</text>
+
+            <!-- F as requested -->
+            <polygon id="area-F" class="clickable-area" points="" fill="#a8dadc" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-F" font-size="11" font-weight="800" fill="#0d3b4d">F</text>
+
+            <!-- G requested triangle -->
+            <polygon id="area-G" class="clickable-area" points="" fill="#bde0fe" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-G" font-size="11" font-weight="800" fill="#0d3b4d">G</text>
+
+            <polygon id="area-H" class="clickable-area" points="" fill="#dbeafe" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-H" font-size="11" font-weight="800" fill="#0d3b4d">H</text>
+
+            <polygon id="area-I" class="clickable-area" points="" fill="#90ee90" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-I" font-size="11" font-weight="800" fill="#0d3b4d">I</text>
+
+            <polygon id="area-C" class="clickable-area" points="" fill="#ffd700" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-C" font-size="11" font-weight="800" fill="#0d3b4d">C</text>
+
+            <polygon id="area-L" class="clickable-area" points="" fill="#cdb4db" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-L" font-size="11" font-weight="800" fill="#0d3b4d">L</text>
+
+            <polygon id="area-B" class="clickable-area" points="" fill="#ffb6c1" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-B" font-size="11" font-weight="800" fill="#0d3b4d">B</text>
+
+            <polygon id="area-D" class="clickable-area" points="" fill="#ff9999" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-D" font-size="11" font-weight="800" fill="#0d3b4d">D</text>
+
+            <polygon id="area-E" class="clickable-area" points="" fill="#ffb347" fill-opacity="0.18" stroke="#0d3b4d" stroke-width="1.3"/>
+            <text id="txt-E" font-size="11" font-weight="800" fill="#0d3b4d">E</text>
+
+            <!-- CLICKABLE POINTS -->
+            <circle id="pt-q0p0" class="clickable-point base" cx="0" cy="0" r="7"/>
+            <circle id="pt-qst"  class="clickable-point base" cx="0" cy="0" r="7"/>
+            <circle id="pt-qdt"  class="clickable-point base" cx="0" cy="0" r="7"/>
+            <circle id="pt-qs"   class="clickable-point base" cx="0" cy="0" r="6"/>
+            <circle id="pt-qd"   class="clickable-point base" cx="0" cy="0" r="6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Geometry helpers =====
+    const AX = { x0:100, yBottom:420 };
+    const yPw  = 310;
+    const yPwT = 250;
+    const SAMPLE_N = 90;
+
+    // Quadratic curves
+    const SUPPLY = { p0:[100,400], p1:[330,270], p2:[580,100] };
+    const DEMAND = { p0:[100, 80], p1:[330,140], p2:[620,400] };
+
+    function qBezier(t, p0, p1, p2){
+      const u=1-t;
+      return [
+        u*u*p0[0] + 2*u*t*p1[0] + t*t*p2[0],
+        u*u*p0[1] + 2*u*t*p1[1] + t*t*p2[1],
+      ];
+    }
+    const qX = (t,P)=> qBezier(t,P.p0,P.p1,P.p2)[0];
+    const qY = (t,P)=> qBezier(t,P.p0,P.p1,P.p2)[1];
+
+    function tForX(xTarget,P){
+      let lo=0,hi=1;
+      for(let i=0;i<60;i++){
+        const mid=(lo+hi)/2;
+        (qX(mid,P) < xTarget) ? lo=mid : hi=mid;
+      }
+      return (lo+hi)/2;
+    }
+    function tForY(yTarget,P,increasing){
+      let lo=0,hi=1;
+      for(let i=0;i<75;i++){
+        const mid=(lo+hi)/2;
+        const y=qY(mid,P);
+        if(increasing){
+          (y < yTarget) ? lo=mid : hi=mid;
+        }else{
+          (y > yTarget) ? lo=mid : hi=mid;
+        }
+      }
+      return (lo+hi)/2;
+    }
+    function yAtX(x,P){
+      const t=tForX(x,P);
+      return qY(t,P);
+    }
+    function sampleCurveByX(P, xA, xB, n=SAMPLE_N){
+      const pts=[];
+      for(let i=0;i<=n;i++){
+        const x=xA + (xB-xA)*(i/n);
+        pts.push([x, yAtX(x,P)]);
+      }
+      return pts;
+    }
+    function intersectionSupplyDemand(){
+      let lo=100, hi=580;
+      const f = (x)=> yAtX(x,SUPPLY) - yAtX(x,DEMAND);
+      for(let i=0;i<95;i++){
+        const mid=(lo+hi)/2;
+        const fm=f(mid), flo=f(lo);
+        (flo*fm<=0) ? hi=mid : lo=mid;
+      }
+      const x=(lo+hi)/2;
+      return {x, y:yAtX(x,SUPPLY)};
+    }
+
+    function setPathD(id,P){
+      document.getElementById(id).setAttribute(
+        "d",
+        `M ${P.p0[0]} ${P.p0[1]} Q ${P.p1[0]} ${P.p1[1]} ${P.p2[0]} ${P.p2[1]}`
+      );
+    }
+    function setLine(id,attrs){
+      const el=document.getElementById(id);
+      for(const k in attrs) el.setAttribute(k, attrs[k]);
+    }
+    function setTextPos(id,x,y){
+      const el=document.getElementById(id);
+      el.setAttribute("x", x);
+      el.setAttribute("y", y);
+    }
+    function setPoly(id, pts){
+      document.getElementById(id).setAttribute(
+        "points",
+        pts.map(p=>`${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ")
+      );
+    }
+    function setCircle(id,x,y){
+      const el=document.getElementById(id);
+      el.setAttribute("cx", x.toFixed(2));
+      el.setAttribute("cy", y.toFixed(2));
+    }
+    function polygonCentroid(pts){
+      let A=0, Cx=0, Cy=0;
+      const n=pts.length;
+      for(let i=0;i<n;i++){
+        const [x0,y0]=pts[i];
+        const [x1,y1]=pts[(i+1)%n];
+        const cross = x0*y1 - x1*y0;
+        A += cross;
+        Cx += (x0 + x1) * cross;
+        Cy += (y0 + y1) * cross;
+      }
+      A *= 0.5;
+      if(Math.abs(A) < 1e-6){
+        const cx = pts.reduce((s,p)=>s+p[0],0)/n;
+        const cy = pts.reduce((s,p)=>s+p[1],0)/n;
+        return {cx, cy};
+      }
+      return {cx: Cx/(6*A), cy: Cy/(6*A)};
+    }
+    function placeLetter(letter, pts){
+      const {cx, cy} = polygonCentroid(pts);
+      setTextPos(`txt-${letter}`, cx, cy);
+    }
+    function yOnLine(x, x1,y1, x2,y2){
+      if(Math.abs(x2-x1) < 1e-9) return y1;
+      const t = (x - x1) / (x2 - x1);
+      return y1 + t*(y2-y1);
+    }
+
+    // ===== Build geometry (with F requested) =====
+    function buildGeometry(){
+      setPathD("supply-path", SUPPLY);
+      setPathD("demand-path", DEMAND);
+
+      const Qs  = qX(tForY(yPw,  SUPPLY,false), SUPPLY);
+      const Qd  = qX(tForY(yPw,  DEMAND,true ), DEMAND);
+      const QsT = qX(tForY(yPwT, SUPPLY,false), SUPPLY);
+      const QdT = qX(tForY(yPwT, DEMAND,true ), DEMAND);
+
+      const eq  = intersectionSupplyDemand();
+      const Q0  = eq.x;
+      const P0  = eq.y;
+
+      // P0 line
+      setLine("p0-line",{x1:AX.x0,y1:P0,x2:Q0,y2:P0});
+      setLine("p0-tick",{x1:90,y1:P0,x2:AX.x0,y2:P0});
+      setTextPos("p0-label",44,P0+5);
+
+      // vlines
+      setLine("vline-qs", {x1:Qs,y1:yPw,x2:Qs,y2:AX.yBottom});
+      setLine("vline-qd", {x1:Qd,y1:yPw,x2:Qd,y2:AX.yBottom});
+      setLine("vline-qst",{x1:QsT,y1:yPwT,x2:QsT,y2:AX.yBottom});
+      setLine("vline-qdt",{x1:QdT,y1:yPwT,x2:QdT,y2:AX.yBottom});
+      setLine("vline-q0", {x1:Q0,y1:P0,x2:Q0,y2:AX.yBottom});
+
+      // labels
+      setTextPos("lbl-qs",  Qs-10,444);
+      setTextPos("lbl-qd",  Qd-10,444);
+      setTextPos("lbl-qst", QsT-18,460);
+      setTextPos("lbl-qdt", QdT-18,460);
+      setTextPos("lbl-q0",  Q0-10,444);
+
+      // ===== Areas =====
+
+      // A: under demand above P0 from x0..Q0
+      const demandA = sampleCurveByX(DEMAND, AX.x0, Q0).reverse();
+      const A = [[AX.x0,P0],[Q0,P0], ...demandA];
+      setPoly("area-A", A); placeLetter("A", A);
+
+      // F: (0,P0)->(Q0,P0)->(QsT,PwT)->(0,PwT)
+      const F = [[AX.x0,P0],[Q0,P0],[QsT,yPwT],[AX.x0,yPwT]];
+      setPoly("area-F", F); placeLetter("F", F);
+
+      // G: (Q0,P0)->(QdT,PwT)->(QsT,PwT)
+      const G = [[Q0,P0],[QdT,yPwT],[QsT,yPwT]];
+      setPoly("area-G", G); placeLetter("G", G);
+
+      // Build AC and AB polylines to create disjoint CS pieces
+      const AC = [];
+      for(let i=0;i<=30;i++){
+        const x = QsT - (QsT-Q0)*(i/30);
+        const y = yOnLine(x, Q0,P0, QsT,yPwT);
+        AC.push([x,y]);
+      }
+      const AB = [];
+      for(let i=0;i<=30;i++){
+        const x = QdT - (QdT-Q0)*(i/30);
+        const y = yOnLine(x, Q0,P0, QdT,yPwT);
+        AB.push([x,y]);
+      }
+
+      // H: under demand and above AB on [QsT..QdT]
+      const Hcurve = sampleCurveByX(DEMAND, QsT, QdT);
+      const AB_back = AB.filter(p => p[0] >= QsT).slice(0).reverse();
+      const Hpoly = [
+        [QsT, yAtX(QsT, DEMAND)],
+        ...Hcurve.slice(1),
+        ...AB_back,
+      ];
+      setPoly("area-H", Hpoly); placeLetter("H", Hpoly);
+
+      // I: PS before tariff at Pw (0..Qs): between Pw and supply
+      const supplyI = sampleCurveByX(SUPPLY, AX.x0, Qs).reverse();
+      const I = [[AX.x0,yPw],[Qs,yPw], ...supplyI];
+      setPoly("area-I", I); placeLetter("I", I);
+
+      // C: (Pw+t - Pw)*Qs rectangle over 0..Qs
+      const C = [[AX.x0,yPwT],[Qs,yPwT],[Qs,yPw],[AX.x0,yPw]];
+      setPoly("area-C", C); placeLetter("C", C);
+
+      // L: under Pw+t and above supply for Qs..Qs+t
+      const supplySeg_Qs_QsT = sampleCurveByX(SUPPLY, Qs, QsT).reverse();
+      const L = [[Qs,yPwT],[QsT,yPwT], ...supplySeg_Qs_QsT, [Qs,yPwT]];
+      setPoly("area-L", L); placeLetter("L", L);
+
+      // B: DWL production between supply and Pw for Qs..Qs+t
+      const supplyB = sampleCurveByX(SUPPLY, Qs, QsT).reverse();
+      const B = [[Qs,yPw],[QsT,yPw],[QsT,yPwT], ...supplyB];
+      setPoly("area-B", B); placeLetter("B", B);
+
+      // D: Govt revenue rectangle between Pw+t and Pw for Qs+t..Qd+t
+      const D = [[QsT,yPwT],[QdT,yPwT],[QdT,yPw],[QsT,yPw]];
+      setPoly("area-D", D); placeLetter("D", D);
+
+      // E: DWL consumption between demand and Pw for Qd+t..Qd
+      const demandE = sampleCurveByX(DEMAND, QdT, Qd).reverse();
+      const E = [[QdT,yPwT],[QdT,yPw],[Qd,yPw], ...demandE];
+      setPoly("area-E", E); placeLetter("E", E);
+
+      // points
+      setCircle("pt-q0p0", Q0, P0);
+      setCircle("pt-qst",  QsT, yPwT);
+      setCircle("pt-qdt",  QdT, yPwT);
+      setCircle("pt-qs",   Qs,  yPw);
+      setCircle("pt-qd",   Qd,  yPw);
+    }
+
+    // ===== Quiz =====
+    const questions = [
+      {
+        type:"area",
+        question:"Question 1: Producer Surplus Before Tariff",
+        description:"Identify domestic producer surplus when trading at world price (Pw) before the tariff.",
+        correctAreas:["area-I"],
+        correctPoints:[],
+        explanation:"Area I is producer surplus at Pw (0..Qs)."
+      },
+      {
+        type:"area",
+        question:"Question 2: Government Tariff Revenue",
+        description:"Identify the area representing tariff revenue collected by the government.",
+        correctAreas:["area-D"],
+        correctPoints:[],
+        explanation:"Area D is tariff revenue: (Pw+t − Pw) × (Qd+t − Qs+t)."
+      },
+      {
+        type:"area",
+        question:"Question 3: Deadweight Loss from Tariff",
+        description:"Select ALL areas representing deadweight loss due to the tariff.",
+        correctAreas:["area-B","area-E"],
+        correctPoints:[],
+        explanation:"B is production inefficiency and E is consumption loss (DWL)."
+      },
+      {
+        type:"area",
+        question:"Question 4: Producer Gain from Tariff",
+        description:"Select ALL areas that sum to the increase in producer surplus from the tariff.",
+        correctAreas:["area-C","area-L"],
+        correctPoints:[],
+        explanation:"Producer gain = C (higher price on initial output) + L (gain on extra output)."
+      },
+      {
+        type:"area",
+        question:"Question 5: Consumer Surplus with Tariff (Pw+t)",
+        description:"Select ALL subareas that together form consumer surplus after the tariff (at Pw+t).",
+        correctAreas:["area-A","area-F","area-G"],
+        correctPoints:[],
+        explanation:"CS at Pw+t is partitioned into A + F + G."
+      },
+      {
+        type:"area",
+        question:"Question 6: Consumer Surplus in Autarky (No Trade)",
+        description:"Select the consumer surplus area at the no-trade equilibrium price P0.",
+        correctAreas:["area-A"],
+        correctPoints:[],
+        explanation:"Area A is the consumer surplus under demand down to P0 (0..Q0)."
+      },
+      {
+        type:"area",
+        question:"Question 7: Gain from International Trade (Consumers, Autarky → Pw+t)",
+        description:"Select ALL subareas that represent the consumer gain from moving from P0 to Pw+t.",
+        correctAreas:["area-F","area-G"],
+        correctPoints:[],
+        explanation:"Consumer gain relative to A is the additional partition: F+ G."
+      },
+      {
+        type:"area",
+        question:"Question 8: Producer Surplus with Tariff (Pw+t)",
+        description:"Select ALL subareas that together form producer surplus after the tariff (at Pw+t).",
+        correctAreas:["area-I","area-C","area-L"],
+        correctPoints:[],
+        explanation:"PS at Pw+t equals I + C + L."
+      },
+      {
+        type:"point",
+        question:"Point 1: Autarky equilibrium point",
+        description:"Click the point (Q0, P0). It will turn green if correct, red if not.",
+        correctAreas:[],
+        correctPoints:["pt-q0p0"],
+        explanation:"That is the intersection of domestic supply and demand: (Q0,P0)."
+      },
+      {
+        type:"point",
+        question:"Point 2: Import interval endpoints at Pw+t",
+        description:"Click BOTH points on the Pw+t line: (Qs+t, Pw+t) and (Qd+t, Pw+t).",
+        correctAreas:[],
+        correctPoints:["pt-qst","pt-qdt"],
+        explanation:"Those two points define the import interval at Pw+t."
+      }
+    ];
+
+    let currentQuestion=0;
+    let selectedAreas=new Set();
+    let selectedPoints=new Set();
+    let locked=false;
+
+    function initializeProgress(){
+      const p=document.getElementById("progress");
+      p.innerHTML="";
+      questions.forEach((_,i)=>{
+        const d=document.createElement("div");
+        d.className="progress-dot";
+        if(i===currentQuestion) d.classList.add("current");
+        p.appendChild(d);
+      });
+    }
+
+    function clearSelection(allowResubmit){
+      selectedAreas.clear();
+      selectedPoints.clear();
+      locked=false;
+
+      document.querySelectorAll(".clickable-area").forEach(a=>{
+        a.classList.remove("selected","correct","incorrect");
+      });
+      document.querySelectorAll(".clickable-point").forEach(p=>{
+        p.classList.remove("correct","incorrect");
+      });
+
+      if(allowResubmit){
+        const fb=document.getElementById("feedback");
+        fb.classList.remove("show","correct","incorrect");
+        fb.innerHTML="";
+        document.getElementById("submit-btn").style.display="inline-block";
+        document.getElementById("next-btn").style.display="none";
+      }
+    }
+
+    function loadQuestion(){
+      const q=questions[currentQuestion];
+      document.getElementById("question-text").textContent=q.question;
+      document.getElementById("question-description").textContent=q.description;
+
+      clearSelection(false);
+
+      const fb=document.getElementById("feedback");
+      fb.classList.remove("show","correct","incorrect");
+      fb.innerHTML="";
+
+      document.getElementById("submit-btn").style.display="inline-block";
+      document.getElementById("next-btn").style.display="none";
+      initializeProgress();
+    }
+
+    // Areas selectable only in area-questions
+    document.querySelectorAll(".clickable-area").forEach(area=>{
+      area.addEventListener("click", function(){
+        if(locked) return;
+        const q=questions[currentQuestion];
+        if(q.type !== "area") return;
+
+        if(selectedAreas.has(this.id)){
+          selectedAreas.delete(this.id);
+          this.classList.remove("selected");
+        }else{
+          selectedAreas.add(this.id);
+          this.classList.add("selected");
+        }
+      });
+    });
+
+    // Points selectable always; instant green/red in point-questions
+    document.querySelectorAll(".clickable-point").forEach(pt=>{
+      pt.addEventListener("click", function(){
+        if(locked) return;
+        const q=questions[currentQuestion];
+        const id=this.id;
+
+        if(selectedPoints.has(id)){
+          selectedPoints.delete(id);
+          this.classList.remove("correct","incorrect");
+          return;
+        }
+        selectedPoints.add(id);
+
+        if(q.type === "point"){
+          const ok = q.correctPoints.includes(id);
+          this.classList.add(ok ? "correct" : "incorrect");
+        }
+      });
+    });
+
+    function checkAnswer(){
+      locked=true;
+      const q=questions[currentQuestion];
+
+      const areasOk = q.correctAreas.every(a=>selectedAreas.has(a)) && selectedAreas.size===q.correctAreas.length;
+      const pointsOk = q.correctPoints.every(p=>selectedPoints.has(p)) && selectedPoints.size===q.correctPoints.length;
+      const correct = areasOk && pointsOk;
+
+      if(q.correctAreas.length){
+        document.querySelectorAll(".clickable-area").forEach(a=>{
+          if(q.correctAreas.includes(a.id)) a.classList.add("correct");
+          else if(selectedAreas.has(a.id)) a.classList.add("incorrect");
+        });
+      }
+
+      if(q.correctPoints.length){
+        document.querySelectorAll(".clickable-point").forEach(p=>{
+          if(q.correctPoints.includes(p.id)) p.classList.add("correct");
+          else if(selectedPoints.has(p.id)) p.classList.add("incorrect");
+        });
+      }
+
+      const fb=document.getElementById("feedback");
+      fb.classList.add("show");
+      fb.className = "feedback show " + (correct ? "correct" : "incorrect");
+      fb.innerHTML = (correct ? "<strong>✓ Correct!</strong> " : "<strong>✗ Not quite.</strong> ") + q.explanation;
+
+      document.getElementById("submit-btn").style.display="none";
+      document.getElementById("next-btn").style.display="inline-block";
+
+      const dots=document.querySelectorAll(".progress-dot");
+      dots[currentQuestion].classList.remove("current");
+      dots[currentQuestion].classList.add("completed");
+    }
+
+    function nextQuestion(){
+      currentQuestion++;
+      if(currentQuestion>=questions.length){
+        document.querySelector(".practice-area").innerHTML=`
+          <div style="text-align:center; padding:18px;">
+            <h2 style="color:#16a34a; font-size:20px; margin-bottom:8px;">Done</h2>
+            <p style="font-size:12px; color:#6b7280; margin-bottom:12px;">Completed.</p>
+            <button class="btn-submit" onclick="location.reload()">Restart</button>
+          </div>
+        `;
+      }else loadQuestion();
+    }
+
+    // init
+    buildGeometry();
+    loadQuestion();
+  </script>
+</body>
+</html>
