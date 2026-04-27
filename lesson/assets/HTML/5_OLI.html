@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Paradigma OLI / OLI Paradigm</title>
+
+  <style>
+    :root {
+      --green: #34d399;
+      --green-dark: #10b981;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --bg: #f7f8fa;
+      --panel: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .figure-wrap {
+      width: 100%;
+      max-width: 590px;
+      margin: 0 auto;
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 5px 16px rgba(0,0,0,0.08);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .spacer {
+      width: 45px;
+      flex: 0 0 45px;
+    }
+
+    .title-block {
+      flex: 1;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 16px;
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 9.5px;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .lang-btn {
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 9.5px;
+      white-space: nowrap;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+    }
+
+    .lang-btn:hover {
+      background: #f3f4f6;
+    }
+
+    .diagram-box {
+      width: 100%;
+      overflow-x: auto;
+      padding: 4px 0;
+    }
+
+    svg {
+      width: 100%;
+      min-width: 450px;
+      height: auto;
+      display: block;
+    }
+
+    .shape {
+      stroke: #9ca3af;
+      stroke-width: 3;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      filter: url(#softShadow);
+    }
+
+    .shape-group:hover .shape {
+      stroke: var(--green-dark);
+      stroke-width: 4;
+      filter: url(#strongShadow);
+    }
+
+    .ownership {
+      fill: #eef2ff;
+    }
+
+    .internalization {
+      fill: #ecfdf5;
+    }
+
+    .location {
+      fill: #fff7ed;
+    }
+
+    .decision {
+      fill: #ffffff;
+    }
+
+    .shape-group:hover .ownership,
+    .shape-group:hover .internalization,
+    .shape-group:hover .location,
+    .shape-group:hover .decision {
+      fill: #f0fdfa;
+    }
+
+    .arrow {
+      stroke: var(--green);
+      stroke-width: 3;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+
+    .text {
+      font-size: 30px;
+      fill: #111827;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      font-weight: 500;
+      pointer-events: none;
+    }
+
+    .main-text {
+      font-size: 36px;
+      font-weight: 700;
+    }
+
+    .box-text {
+      font-size: 29px;
+    }
+
+    .ellipse-text {
+      font-size: 28px;
+    }
+
+    .tooltip {
+      position: absolute;
+      max-width: 230px;
+      background: #111827;
+      color: white;
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 10.5px;
+      line-height: 1.35;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -115%);
+      transition: opacity 0.15s ease;
+      z-index: 10;
+    }
+
+    .tooltip strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 11.5px;
+      color: #a7f3d0;
+    }
+
+    .note {
+      margin-top: 7px;
+      padding: 7px 8px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 9.5px;
+      color: #4b5563;
+      line-height: 1.35;
+    }
+
+    .note strong {
+      color: #111827;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 8px;
+      }
+
+      .figure-wrap {
+        padding: 9px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .spacer {
+        display: none;
+      }
+
+      h1 {
+        font-size: 15px;
+      }
+
+      .subtitle {
+        font-size: 9px;
+      }
+
+      .lang-btn {
+        align-self: center;
+      }
+
+      svg {
+        min-width: 430px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="figure-wrap">
+    <div class="topbar">
+      <div class="spacer"></div>
+
+      <div class="title-block">
+        <h1 id="title">Paradigma OLI de la internacionalización</h1>
+
+        <p id="subtitle" class="subtitle">
+          Pasa el cursor sobre cada elemento para ver una breve explicación.
+        </p>
+      </div>
+
+      <button id="langBtn" class="lang-btn" type="button">English</button>
+    </div>
+
+    <div class="diagram-box">
+      <svg id="oliDiagram" viewBox="0 0 1100 720" role="img" aria-label="Diagrama del paradigma OLI">
+
+        <defs>
+          <marker
+            id="arrowhead"
+            markerWidth="10"
+            markerHeight="10"
+            refX="8"
+            refY="3"
+            orient="auto"
+            markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L8,3 z" fill="#34d399"></path>
+          </marker>
+
+          <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.10"/>
+          </filter>
+
+          <filter id="strongShadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000000" flood-opacity="0.18"/>
+          </filter>
+        </defs>
+
+        <!-- Arrows from Ownership advantages -->
+        <path class="arrow" d="M390 165 L220 165 L220 260"></path>
+        <path class="arrow" d="M550 185 L550 260"></path>
+        <path class="arrow" d="M710 165 L880 165 L880 260"></path>
+
+        <!-- Arrows from bottom advantages -->
+        <path class="arrow" d="M220 500 L220 390"></path>
+        <path class="arrow" d="M390 520 L500 390"></path>
+        <path class="arrow" d="M710 520 L600 390"></path>
+        <path class="arrow" d="M880 500 L880 390"></path>
+
+        <!-- Ownership advantages -->
+        <g class="shape-group" data-key="ownership">
+          <ellipse class="shape ownership" cx="550" cy="105" rx="235" ry="82"></ellipse>
+          <text class="text main-text" x="550" y="80">
+            <tspan id="ownershipLine1" x="550" dy="0">Ownership</tspan>
+            <tspan id="ownershipLine2" x="550" dy="48">advantages</tspan>
+          </text>
+        </g>
+
+        <!-- Exports -->
+        <g class="shape-group" data-key="exports">
+          <rect class="shape decision" x="110" y="270" width="220" height="120" rx="8"></rect>
+          <text id="exportsText" class="text box-text" x="220" y="332">Exports</text>
+        </g>
+
+        <!-- Direct Investment -->
+        <g class="shape-group" data-key="directInvestment">
+          <rect class="shape decision" x="440" y="270" width="220" height="120" rx="8"></rect>
+          <text class="text box-text" x="550" y="310">
+            <tspan id="directLine1" x="550" dy="0">Direct</tspan>
+            <tspan id="directLine2" x="550" dy="40">Investment</tspan>
+          </text>
+        </g>
+
+        <!-- Licensing -->
+        <g class="shape-group" data-key="licensing">
+          <rect class="shape decision" x="770" y="270" width="220" height="120" rx="8"></rect>
+          <text id="licensingText" class="text box-text" x="880" y="332">Licensing</text>
+        </g>
+
+        <!-- Internalization advantages -->
+        <g class="shape-group" data-key="internalization">
+          <ellipse class="shape internalization" cx="240" cy="590" rx="255" ry="86"></ellipse>
+          <text class="text ellipse-text" x="240" y="565">
+            <tspan id="internalLine1" x="240" dy="0">Internalization</tspan>
+            <tspan id="internalLine2" x="240" dy="42">advantages</tspan>
+          </text>
+        </g>
+
+        <!-- Location advantages -->
+        <g class="shape-group" data-key="location">
+          <ellipse class="shape location" cx="860" cy="590" rx="255" ry="86"></ellipse>
+          <text class="text ellipse-text" x="860" y="565">
+            <tspan id="locationLine1" x="860" dy="0">Location</tspan>
+            <tspan id="locationLine2" x="860" dy="42">advantages</tspan>
+          </text>
+        </g>
+
+      </svg>
+    </div>
+
+    <div id="note" class="note">
+      <strong>Idea central:</strong>
+      el paradigma OLI explica cómo una empresa decide entre exportar, conceder licencias o invertir directamente en el extranjero.
+      La inversión directa suele ser más probable cuando coinciden ventajas de propiedad, de localización y de internalización.
+    </div>
+  </div>
+
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    const TEXTS = {
+      es: {
+        langButton: "English",
+
+        title: "Paradigma OLI de la internacionalización",
+        subtitle: "Pasa el cursor sobre cada elemento para ver una breve explicación.",
+
+        ownershipLine1: "Ventajas",
+        ownershipLine2: "de propiedad",
+
+        exportsText: "Exportaciones",
+
+        directLine1: "Inversión",
+        directLine2: "directa",
+
+        licensingText: "Licencias",
+
+        internalLine1: "Ventajas de",
+        internalLine2: "internalización",
+
+        locationLine1: "Ventajas de",
+        locationLine2: "localización",
+
+        note: "<strong>Idea central:</strong> el paradigma OLI explica cómo una empresa decide entre exportar, conceder licencias o invertir directamente en el extranjero. La inversión directa suele ser más probable cuando coinciden ventajas de propiedad, de localización y de internalización.",
+
+        tooltips: {
+          ownership: {
+            title: "Ventajas de propiedad",
+            text: "Son los activos específicos de la empresa: tecnología, marca, patentes, conocimiento, capacidades organizativas o reputación. Sin estas ventajas, la empresa tendría difícil competir fuera de su país."
+          },
+          exports: {
+            title: "Exportaciones",
+            text: "La empresa produce en su país de origen y vende en mercados exteriores. Es una forma de internacionalización menos comprometida que invertir directamente en el extranjero."
+          },
+          directInvestment: {
+            title: "Inversión directa",
+            text: "La empresa establece producción, filiales o activos en otro país. Suele elegirse cuando combina ventajas de propiedad, ventajas de localización y ventajas de internalización."
+          },
+          licensing: {
+            title: "Licencias",
+            text: "La empresa permite a otra empresa extranjera usar su tecnología, marca o conocimiento a cambio de pagos. Puede ser útil cuando no quiere asumir directamente los costes o riesgos de producir fuera."
+          },
+          internalization: {
+            title: "Ventajas de internalización",
+            text: "Indican cuándo conviene que la empresa controle internamente una actividad en lugar de contratarla o licenciarla a terceros. Reducen riesgos de oportunismo, pérdida de conocimiento o problemas de coordinación."
+          },
+          location: {
+            title: "Ventajas de localización",
+            text: "Son los atractivos de producir o establecerse en un país concreto: costes laborales, acceso a mercado, recursos naturales, instituciones, infraestructuras, proximidad a clientes o ventajas fiscales."
+          }
+        }
+      },
+
+      en: {
+        langButton: "Español",
+
+        title: "OLI paradigm of internationalization",
+        subtitle: "Hover over each element to see a short explanation.",
+
+        ownershipLine1: "Ownership",
+        ownershipLine2: "advantages",
+
+        exportsText: "Exports",
+
+        directLine1: "Direct",
+        directLine2: "Investment",
+
+        licensingText: "Licensing",
+
+        internalLine1: "Internalization",
+        internalLine2: "advantages",
+
+        locationLine1: "Location",
+        locationLine2: "advantages",
+
+        note: "<strong>Main idea:</strong> the OLI paradigm explains how a firm chooses between exporting, licensing, or undertaking foreign direct investment. Direct investment is more likely when ownership, location, and internalization advantages are present at the same time.",
+
+        tooltips: {
+          ownership: {
+            title: "Ownership advantages",
+            text: "These are firm-specific assets such as technology, brand reputation, patents, know-how, organizational capabilities, or managerial expertise. Without them, the firm would find it harder to compete abroad."
+          },
+          exports: {
+            title: "Exports",
+            text: "The firm produces in its home country and sells in foreign markets. This is usually a less committed form of internationalization than investing directly abroad."
+          },
+          directInvestment: {
+            title: "Direct investment",
+            text: "The firm establishes production, subsidiaries, or assets in another country. This option is usually chosen when ownership, location, and internalization advantages come together."
+          },
+          licensing: {
+            title: "Licensing",
+            text: "The firm allows a foreign company to use its technology, brand, or knowledge in exchange for payments. It can be attractive when the firm does not want to assume the full cost or risk of operating abroad."
+          },
+          internalization: {
+            title: "Internalization advantages",
+            text: "These explain when it is better for the firm to control an activity internally rather than contract it out or license it to others. They reduce risks linked to opportunism, knowledge leakage, or coordination problems."
+          },
+          location: {
+            title: "Location advantages",
+            text: "These are the benefits of operating in a particular country: labour costs, market access, natural resources, institutions, infrastructure, proximity to customers, or tax advantages."
+          }
+        }
+      }
+    };
+
+    let currentLang = "es";
+
+    const tooltip = document.getElementById("tooltip");
+    const groups = document.querySelectorAll(".shape-group");
+    const langBtn = document.getElementById("langBtn");
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value;
+    }
+
+    function applyLanguage() {
+      const txt = TEXTS[currentLang];
+
+      document.documentElement.lang = currentLang;
+
+      setText("title", txt.title);
+      setText("subtitle", txt.subtitle);
+      setText("langBtn", txt.langButton);
+
+      setText("ownershipLine1", txt.ownershipLine1);
+      setText("ownershipLine2", txt.ownershipLine2);
+
+      setText("exportsText", txt.exportsText);
+
+      setText("directLine1", txt.directLine1);
+      setText("directLine2", txt.directLine2);
+
+      setText("licensingText", txt.licensingText);
+
+      setText("internalLine1", txt.internalLine1);
+      setText("internalLine2", txt.internalLine2);
+
+      setText("locationLine1", txt.locationLine1);
+      setText("locationLine2", txt.locationLine2);
+
+      document.getElementById("note").innerHTML = txt.note;
+    }
+
+    groups.forEach(group => {
+      group.addEventListener("mouseenter", () => {
+        const key = group.dataset.key;
+        const item = TEXTS[currentLang].tooltips[key];
+
+        tooltip.innerHTML = `<strong>${item.title}</strong>${item.text}`;
+        tooltip.style.opacity = "1";
+      });
+
+      group.addEventListener("mousemove", event => {
+        tooltip.style.left = event.pageX + "px";
+        tooltip.style.top = event.pageY - 8 + "px";
+      });
+
+      group.addEventListener("mouseleave", () => {
+        tooltip.style.opacity = "0";
+      });
+    });
+
+    langBtn.addEventListener("click", () => {
+      currentLang = currentLang === "es" ? "en" : "es";
+      tooltip.style.opacity = "0";
+      applyLanguage();
+    });
+
+    applyLanguage();
+  </script>
+</body>
+</html>

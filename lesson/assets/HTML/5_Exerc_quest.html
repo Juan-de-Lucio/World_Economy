@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Exercise: Order the Market Entry Modes</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 1.5rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+    }
+    #sortable {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0;
+    }
+    #sortable li {
+      padding: 0.4rem 0.6rem;      /* smaller padding */
+      margin: 0.15rem 0;           /* tighter spacing */
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      cursor: move;
+      font-size: 0.9rem;           /* slightly smaller text */
+      border-radius: 4px;
+    }
+    #sortable li.dragging {
+      opacity: 0.5;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 1rem;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    #result.correct { color: green; }
+    #result.wrong   { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Order the Market Entry Modes</h1>
+  <p>Drag each item to arrange them from <strong>least</strong> to <strong>most</strong> degree of <strong>control</strong> and <strong>risk</strong> of investment:</p>
+  <ul id="sortable">
+    <li draggable="true">strategic-alliance</li>
+    <li draggable="true">licensing</li>
+    <li draggable="true">fully-owned</li>
+    <li draggable="true">franchising</li>
+    <li draggable="true">exporting</li>
+    <li draggable="true">joint-venture</li>
+  </ul>
+  <button id="check">Check Answer</button>
+  <p id="result"></p>
+
+  <script>
+    const list = document.getElementById('sortable');
+    let dragSrcEl = null;
+
+    function handleDragStart(e) {
+      dragSrcEl = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', this.innerHTML);
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+
+    function handleDrop(e) {
+      e.stopPropagation();
+      if (dragSrcEl !== this) {
+        const temp = this.innerHTML;
+        this.innerHTML = e.dataTransfer.getData('text/plain');
+        dragSrcEl.innerHTML = temp;
+      }
+      return false;
+    }
+
+    function handleDragEnd() {
+      this.classList.remove('dragging');
+    }
+
+    Array.from(list.children).forEach(item => {
+      item.addEventListener('dragstart', handleDragStart);
+      item.addEventListener('dragover',  handleDragOver);
+      item.addEventListener('drop',      handleDrop);
+      item.addEventListener('dragend',   handleDragEnd);
+    });
+
+    document.getElementById('check').addEventListener('click', () => {
+      const correctOrder = [
+        'exporting',
+        'licensing',
+        'franchising',
+        'strategic-alliance',
+        'joint-venture',
+        'fully-owned'
+      ];
+      const userOrder = Array.from(list.children).map(li => li.textContent.trim());
+      const resultEl = document.getElementById('result');
+
+      if (userOrder.length !== correctOrder.length) {
+        resultEl.textContent = 'Something went wrong!';
+        resultEl.className = 'wrong';
+        return;
+      }
+
+      const allCorrect = userOrder.every((item, i) =>
+        item.toLowerCase() === correctOrder[i]
+      );
+
+      if (allCorrect) {
+        resultEl.textContent = 'Correct! You’ve ordered the entry modes properly.';
+        resultEl.className = 'correct';
+      } else {
+        resultEl.textContent = 'That’s not quite right. Please try again.';
+        resultEl.className = 'wrong';
+      }
+    });
+  </script>
+</body>
+</html>

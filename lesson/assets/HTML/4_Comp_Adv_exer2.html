@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparative Advantage Interactive Exercise</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --ink: #1d2939;
+      --muted: #475467;
+      --line: #d0d5dd;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      padding: 16px;
+    }
+
+    .page {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    h1,
+    h2,
+    h3 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    .lead {
+      text-align: center;
+      color: var(--muted);
+      margin: 0 auto 18px;
+      max-width: 620px;
+      font-size: 13px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 7px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    th {
+      background: #f8fafc;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      max-width: 95px;
+      padding: 6px;
+      border: 1px solid #98a2b3;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      background: #111827;
+      color: #fff;
+      padding: 9px 15px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1f2937;
+    }
+
+    #result {
+      white-space: pre-line;
+      text-align: center;
+      font-weight: 700;
+      font-size: 15px;
+      color: #0f172a;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .chart-card canvas {
+      width: 100%;
+      max-height: 190px;
+    }
+
+    .footnote {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 900px) {
+      .charts {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Comparative Advantage Interactive Exercise</h1>
+    <p class="lead">
+      Enter each country's productivity for two goods. After calculating, the
+      page shows one chart for opportunity cost and one chart for within-country relative productivity.
+    </p>
+
+    <section class="card">
+      <h2>Productivity Inputs</h2>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th></th>
+            <th>Good A (Units/Hour)</th>
+            <th>Good B (Units/Hour)</th>
+          </tr>
+          <tr>
+            <td>Country 1</td>
+            <td><input type="number" id="productivityA1" value="10" min="0.01" step="0.01"></td>
+            <td><input type="number" id="productivityB1" value="5" min="0.01" step="0.01"></td>
+          </tr>
+          <tr>
+            <td>Country 2</td>
+            <td><input type="number" id="productivityA2" value="6" min="0.01" step="0.01"></td>
+            <td><input type="number" id="productivityB2" value="12" min="0.01" step="0.01"></td>
+          </tr>
+        </table>
+      </div>
+
+      <h3>Hours Required Per Unit</h3>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th></th>
+            <th>Hours per Unit of Good A</th>
+            <th>Hours per Unit of Good B</th>
+          </tr>
+          <tr>
+            <td>Country 1</td>
+            <td id="hoursA1"></td>
+            <td id="hoursB1"></td>
+          </tr>
+          <tr>
+            <td>Country 2</td>
+            <td id="hoursA2"></td>
+            <td id="hoursB2"></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="actions">
+        <button id="calculateButton" type="button">Calculate Comparative Advantage</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Comparative Advantage Result</h2>
+      <p id="result"></p>
+    </section>
+
+    <section class="charts">
+      <div class="card chart-card">
+        <h2>Opportunity Cost</h2>
+        <canvas id="opportunityCostChart"></canvas>
+        <p class="footnote">Lower bars indicate a lower opportunity cost.</p>
+      </div>
+
+      <div class="card chart-card">
+        <h2>Relative Productivity</h2>
+        <canvas id="relativeProductivityChart"></canvas>
+        <p class="footnote">Higher bars indicate that a country produces more of Good A relative to Good B.</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let opportunityCostChart;
+    let relativeProductivityChart;
+
+    function readPositiveNumber(id) {
+      const value = parseFloat(document.getElementById(id).value);
+      return Number.isFinite(value) && value > 0 ? value : null;
+    }
+
+    function updateCell(id, value) {
+      document.getElementById(id).innerText = value;
+    }
+
+    function comparativeText(goodLabel, country1Cost, country2Cost) {
+      if (country1Cost < country2Cost) {
+        return "Country 1 has a comparative advantage in " + goodLabel + ".";
+      }
+      if (country2Cost < country1Cost) {
+        return "Country 2 has a comparative advantage in " + goodLabel + ".";
+      }
+      return "Both countries have the same opportunity cost for " + goodLabel + ".";
+    }
+
+    function buildOrReplaceChart(existingChart, canvasId, chartTitle, labels, datasets, yAxisLabel) {
+      const ctx = document.getElementById(canvasId).getContext("2d");
+      if (existingChart) {
+        existingChart.destroy();
+      }
+
+      return new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: chartTitle
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: yAxisLabel
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function calculateComparativeAdvantage() {
+      const a1 = readPositiveNumber("productivityA1");
+      const b1 = readPositiveNumber("productivityB1");
+      const a2 = readPositiveNumber("productivityA2");
+      const b2 = readPositiveNumber("productivityB2");
+
+      if (!a1 || !b1 || !a2 || !b2) {
+        document.getElementById("result").innerText = "Please enter positive numbers for all productivity values.";
+        updateCell("hoursA1", "");
+        updateCell("hoursB1", "");
+        updateCell("hoursA2", "");
+        updateCell("hoursB2", "");
+        return;
+      }
+
+      const hoursA1 = 1 / a1;
+      const hoursB1 = 1 / b1;
+      const hoursA2 = 1 / a2;
+      const hoursB2 = 1 / b2;
+
+      const opportunityCostA1 = b1 / a1;
+      const opportunityCostB1 = a1 / b1;
+      const opportunityCostA2 = b2 / a2;
+      const opportunityCostB2 = a2 / b2;
+
+      const relativeProductivityCountry1AB = a1 / b1;
+      const relativeProductivityCountry1BA = b1 / a1;
+      const relativeProductivityCountry2AB = a2 / b2;
+      const relativeProductivityCountry2BA = b2 / a2;
+
+      updateCell("hoursA1", hoursA1.toFixed(2));
+      updateCell("hoursB1", hoursB1.toFixed(2));
+      updateCell("hoursA2", hoursA2.toFixed(2));
+      updateCell("hoursB2", hoursB2.toFixed(2));
+
+      const resultText = [
+        comparativeText("Good A", opportunityCostA1, opportunityCostA2),
+        comparativeText("Good B", opportunityCostB1, opportunityCostB2)
+      ].join("\n");
+
+      document.getElementById("result").innerText = resultText;
+
+      opportunityCostChart = buildOrReplaceChart(
+        opportunityCostChart,
+        "opportunityCostChart",
+        "Opportunity Cost by Good",
+        ["Good A", "Good B"],
+        [
+          {
+            label: "Country 1",
+            data: [opportunityCostA1, opportunityCostB1],
+            backgroundColor: "rgba(37, 99, 235, 0.8)",
+            borderColor: "rgba(37, 99, 235, 1)",
+            borderWidth: 1
+          },
+          {
+            label: "Country 2",
+            data: [opportunityCostA2, opportunityCostB2],
+            backgroundColor: "rgba(220, 38, 38, 0.8)",
+            borderColor: "rgba(220, 38, 38, 1)",
+            borderWidth: 1
+          }
+        ],
+        "Units of the other good forgone"
+      );
+
+      relativeProductivityChart = buildOrReplaceChart(
+        relativeProductivityChart,
+        "relativeProductivityChart",
+        "Within-Country Relative Productivity",
+        ["Good A / Good B", "Good B / Good A"],
+        [
+          {
+            label: "Country 1",
+            data: [relativeProductivityCountry1AB, relativeProductivityCountry1BA],
+            backgroundColor: "rgba(37, 99, 235, 0.8)",
+            borderColor: "rgba(37, 99, 235, 1)",
+            borderWidth: 1
+          },
+          {
+            label: "Country 2",
+            data: [relativeProductivityCountry2AB, relativeProductivityCountry2BA],
+            backgroundColor: "rgba(220, 38, 38, 0.8)",
+            borderColor: "rgba(220, 38, 38, 1)",
+            borderWidth: 1
+          }
+        ],
+        "Productivity ratio"
+      );
+    }
+
+    document.getElementById("calculateButton").addEventListener("click", calculateComparativeAdvantage);
+  </script>
+</body>
+</html>

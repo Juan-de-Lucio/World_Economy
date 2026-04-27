@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualización interactiva de acuerdos europeos</title>
+  <style>
+    :root {
+      --bg: #f7f4fb;
+      --card: #ffffff;
+      --text: #231942;
+      --muted: #6b6185;
+      --border: #e5dbf3;
+      --accent: #7b2cbf;
+      --accent-soft: #efe4fb;
+      --shadow: 0 10px 32px rgba(35, 25, 66, 0.10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #faf7fe 0%, #f5f0fb 45%, #f7f4fb 100%);
+    }
+    .app {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+    .header {
+      margin-bottom: 18px;
+    }
+    .header h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      line-height: 1.1;
+    }
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 1000px;
+      line-height: 1.5;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 16px;
+    }
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+    .field {
+      margin-bottom: 14px;
+    }
+    .field label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    select, input[type="text"] {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #d8caee;
+      padding: 12px 14px;
+      font-size: 15px;
+      outline: none;
+      background: #fff;
+      color: var(--text);
+    }
+    select:focus, input[type="text"]:focus {
+      border-color: #a56ae0;
+      box-shadow: 0 0 0 3px rgba(123,44,191,0.12);
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid #d7c4ee;
+      background: #fff;
+      color: #592b80;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+    .btn:hover { background: #f7f0fe; }
+    .btn.primary {
+      background: linear-gradient(180deg, #8e4bd8 0%, #7b2cbf 100%);
+      color: white;
+      border-color: transparent;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .stat {
+      background: #fbf9fe;
+      border: 1px solid #eadff7;
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .stat .label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+    .stat .value {
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .member-list-wrap {
+      margin-top: 12px;
+    }
+    .member-list-wrap h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+    .member-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 300px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8f4fc;
+      border: 1px solid #eadff7;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #faf8fd;
+      border: 1px solid #ece2f7;
+    }
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .viz-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 10px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .viz-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px 14px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .viz-toolbar .title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .viz-toolbar .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .canvas-wrap {
+      width: 100%;
+      overflow: auto;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fcfaff, #f7f2fc);
+      border: 1px solid #ede4f7;
+    }
+    svg {
+      width: 100%;
+      min-width: 980px;
+      height: auto;
+      display: block;
+    }
+    .area-box {
+      cursor: pointer;
+      transition: opacity 0.15s ease, stroke-width 0.15s ease, transform 0.15s ease;
+    }
+    .area-label {
+      font-size: 12px;
+      font-weight: 800;
+      pointer-events: none;
+      fill: #4f3b69;
+    }
+    .country {
+      cursor: pointer;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .country-card {
+      fill: rgba(255,255,255,0.96);
+      stroke: rgba(63,52,94,0.16);
+      stroke-width: 1.2;
+      rx: 12;
+    }
+    .country:hover .country-card,
+    .country.active .country-card {
+      stroke: #5f3e8b;
+      stroke-width: 2;
+      fill: #fff;
+    }
+    .flag-text {
+      font-size: 20px;
+      dominant-baseline: middle;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .country-code {
+      font-size: 8px;
+      font-weight: 800;
+      fill: #63557e;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .tooltip {
+      position: fixed;
+      z-index: 1000;
+      pointer-events: none;
+      background: rgba(34, 25, 53, 0.96);
+      color: white;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.35;
+      opacity: 0;
+      transform: translate(12px, 12px);
+      transition: opacity 0.12s ease;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+      max-width: 260px;
+    }
+    .note {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    @media (max-width: 1080px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h1>Acuerdos europeos · visualización interactiva</h1>
+      <p>
+        Selecciona un acuerdo para ver solo los países que pertenecen a él. También puedes hacer clic directamente sobre una caja del diagrama o sobre un país.
+        Esta versión prioriza la legibilidad y el filtrado visual frente al solapamiento del esquema original.
+      </p>
+    </div>
+
+    <div class="layout">
+      <aside class="panel">
+        <h2>Filtros e información</h2>
+
+        <div class="field">
+          <label for="agreementSelect">Acuerdo / agrupación</label>
+          <select id="agreementSelect"></select>
+        </div>
+
+        <div class="field">
+          <label for="countrySearch">Buscar país</label>
+          <input id="countrySearch" type="text" placeholder="Ej.: Portugal, Ucrania, Suiza" />
+        </div>
+
+        <div class="row">
+          <button id="resetBtn" class="btn">Mostrar todos</button>
+          <button id="focusBtn" class="btn primary">Resaltar acuerdo</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Selección</div>
+            <div class="value" id="selectionName">Todos</div>
+          </div>
+          <div class="stat">
+            <div class="label">Países visibles</div>
+            <div class="value" id="visibleCount">50</div>
+          </div>
+        </div>
+
+        <div class="member-list-wrap">
+          <h3 id="memberTitle">Países</h3>
+          <div class="member-list" id="memberList"></div>
+        </div>
+
+        <div class="legend">
+          <span class="legend-item"><i class="swatch" style="background:#c9b0ea"></i> Áreas / acuerdos</span>
+          <span class="legend-item"><i class="swatch" style="background:#ffffff;border:1px solid #cab7e6"></i> Países</span>
+        </div>
+
+        <div class="note">
+          Nota: la composición de algunos acuerdos cambia con el tiempo. Esta versión está diseñada para ser una visualización interactiva clara y basada en el esquema que compartiste.
+        </div>
+      </aside>
+
+      <section class="viz-card">
+        <div class="viz-toolbar">
+          <div>
+            <div class="title">Diagrama interactivo</div>
+            <div class="subtitle">Haz clic en un acuerdo para filtrar; los países no miembros desaparecen.</div>
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <svg id="viz" viewBox="0 0 1280 906" aria-label="Visualización de acuerdos europeos"></svg>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+
+const countries = {
+  CH: { name: 'Suiza', flag: '🇨🇭', x: 98, y: 150 },
+  IS: { name: 'Islandia', flag: '🇮🇸', x: 95, y: 246 },
+  NO: { name: 'Noruega', flag: '🇳🇴', x: 95, y: 318 },
+  LI: { name: 'Liechtenstein', flag: '🇱🇮', x: 96, y: 414 },
+  SE: { name: 'Suecia', flag: '🇸🇪', x: 264, y: 244 },
+  DK: { name: 'Dinamarca', flag: '🇩🇰', x: 378, y: 244 },
+  FI: { name: 'Finlandia', flag: '🇫🇮', x: 264, y: 320 },
+  PL: { name: 'Polonia', flag: '🇵🇱', x: 490, y: 244 },
+  CZ: { name: 'Chequia', flag: '🇨🇿', x: 572, y: 244 },
+  HU: { name: 'Hungría', flag: '🇭🇺', x: 654, y: 244 },
+  SK: { name: 'Eslovaquia', flag: '🇸🇰', x: 622, y: 321 },
+  EE: { name: 'Estonia', flag: '🇪🇪', x: 266, y: 411 },
+  LV: { name: 'Letonia', flag: '🇱🇻', x: 349, y: 411 },
+  LT: { name: 'Lituania', flag: '🇱🇹', x: 432, y: 411 },
+  BE: { name: 'Bélgica', flag: '🇧🇪', x: 267, y: 533 },
+  NL: { name: 'Países Bajos', flag: '🇳🇱', x: 349, y: 533 },
+  LU: { name: 'Luxemburgo', flag: '🇱🇺', x: 432, y: 533 },
+  IT: { name: 'Italia', flag: '🇮🇹', x: 552, y: 425 },
+  AT: { name: 'Austria', flag: '🇦🇹', x: 635, y: 425 },
+  FR: { name: 'Francia', flag: '🇫🇷', x: 552, y: 515 },
+  DE: { name: 'Alemania', flag: '🇩🇪', x: 635, y: 515 },
+  SI: { name: 'Eslovenia', flag: '🇸🇮', x: 722, y: 515 },
+  ES: { name: 'España', flag: '🇪🇸', x: 552, y: 579 },
+  PT: { name: 'Portugal', flag: '🇵🇹', x: 635, y: 579 },
+  MT: { name: 'Malta', flag: '🇲🇹', x: 722, y: 579 },
+  CY: { name: 'Chipre', flag: '🇨🇾', x: 430, y: 654 },
+  GR: { name: 'Grecia', flag: '🇬🇷', x: 712, y: 316 },
+  TR: { name: 'Turquía', flag: '🇹🇷', x: 815, y: 150 },
+  BG: { name: 'Bulgaria', flag: '🇧🇬', x: 814, y: 252 },
+  RO: { name: 'Rumanía', flag: '🇷🇴', x: 814, y: 344 },
+  GE: { name: 'Georgia', flag: '🇬🇪', x: 965, y: 126 },
+  UA: { name: 'Ucrania', flag: '🇺🇦', x: 966, y: 215 },
+  AZ: { name: 'Azerbaiyán', flag: '🇦🇿', x: 1040, y: 215 },
+  MD: { name: 'Moldavia', flag: '🇲🇩', x: 967, y: 320 },
+  RU: { name: 'Rusia', flag: '🇷🇺', x: 1114, y: 120 },
+  BY: { name: 'Bielorrusia', flag: '🇧🇾', x: 1213, y: 120 },
+  AM: { name: 'Armenia', flag: '🇦🇲', x: 1112, y: 215 },
+  RS: { name: 'Serbia', flag: '🇷🇸', x: 1114, y: 307 },
+  AL: { name: 'Albania', flag: '🇦🇱', x: 1114, y: 402 },
+  BA: { name: 'Bosnia y Herzegovina', flag: '🇧🇦', x: 962, y: 440 },
+  MK: { name: 'Macedonia del Norte', flag: '🇲🇰', x: 1043, y: 440 },
+  ME: { name: 'Montenegro', flag: '🇲🇪', x: 1124, y: 440 },
+  XK: { name: 'Kosovo', flag: '🇽🇰', x: 1230, y: 360 },
+  IE: { name: 'Irlanda', flag: '🇮🇪', x: 575, y: 650 },
+  GB: { name: 'Reino Unido', flag: '🇬🇧', x: 999, y: 650 },
+  HR: { name: 'Croacia', flag: '🇭🇷', x: 798, y: 755 },
+  MC: { name: 'Mónaco', flag: '🇲🇨', x: 666, y: 820 },
+  AD: { name: 'Andorra', flag: '🇦🇩', x: 747, y: 820 },
+  SM: { name: 'San Marino', flag: '🇸🇲', x: 829, y: 820 },
+  VA: { name: 'Ciudad del Vaticano', flag: '🇻🇦', x: 1220, y: 820 }
+};
+
+
+const agreementOrder = [
+  'ALL', 'coe', 'schengen', 'efta', 'eea', 'eu', 'eurozone', 'eu_customs', 'monetary', 'nordic', 'visegrad', 'baltic', 'benelux', 'bsec', 'guam', 'cefta', 'union', 'cta'
+];
+
+
+const agreements = {
+  ALL: {
+    name: 'Todos los países',
+    description: 'Vista general con todos los países del diagrama visibles.',
+    color: '#d7c3f2',
+    members: Object.keys(countries)
+  },
+  coe: {
+    name: 'Consejo de Europa',
+    color: '#b85ac9',
+    rect: { x: 18, y: 20, w: 1142, h: 868 },
+    label: { x: 46, y: 54 },
+    description: 'Marco paneuropeo general del diagrama.',
+    members: Object.keys(countries)
+  },
+  schengen: {
+    name: 'Espacio Schengen',
+    color: '#e7333f',
+    rect: { x: 33, y: 74, w: 741, h: 535 },
+    label: { x: 48, y: 104 },
+    description: 'Área de libre circulación sin controles fronterizos internos.',
+    members: ['CH','IS','NO','SE','DK','FI','PL','CZ','HU','SK','EE','LV','LT','BE','NL','LU','IT','AT','FR','DE','SI','ES','PT','MT','GR']
+  },
+  efta: {
+    name: 'AELC',
+    color: '#b29008',
+    rect: { x: 66, y: 116, w: 95, h: 334 },
+    label: { x: 49, y: 374 },
+    description: 'Asociación Europea de Libre Comercio.',
+    members: ['CH','IS','NO','LI']
+  },
+  eea: {
+    name: 'EEE',
+    color: '#6e4aa6',
+    rect: { x: 45, y: 186, w: 826, h: 520 },
+    label: { x: 56, y: 684 },
+    description: 'Espacio Económico Europeo.',
+    members: ['IS','NO','LI','SE','DK','FI','PL','CZ','HU','SK','EE','LV','LT','BE','NL','LU','IT','AT','FR','DE','SI','ES','PT','MT','CY','GR','BG','RO','IE','HR']
+  },
+  eu: {
+    name: 'Unión Europea',
+    color: '#2580c8',
+    rect: { x: 168, y: 187, w: 698, h: 598 },
+    label: { x: 208, y: 762 },
+    description: 'Bloque político y económico de integración europea.',
+    members: ['SE','DK','FI','PL','CZ','HU','SK','EE','LV','LT','BE','NL','LU','IT','AT','FR','DE','SI','ES','PT','MT','CY','GR','BG','RO','IE','HR']
+  },
+  eurozone: {
+    name: 'Eurozona',
+    color: '#47b53e',
+    rect: { x: 179, y: 274, w: 584, h: 425 },
+    label: { x: 214, y: 678 },
+    description: 'Países de la UE que utilizan el euro en el esquema mostrado.',
+    members: ['FI','SK','EE','LV','LT','BE','NL','LU','IT','AT','FR','DE','SI','ES','PT','MT','CY','GR','IE']
+  },
+  nordic: {
+    name: 'Consejo Nórdico',
+    color: '#16495d',
+    rect: { x: 57, y: 187, w: 351, h: 157 },
+    label: { x: 265, y: 286 },
+    description: 'Cooperación entre países nórdicos.',
+    members: ['IS','NO','SE','DK','FI']
+  },
+  visegrad: {
+    name: 'Grupo de Visegrado',
+    color: '#70207f',
+    rect: { x: 421, y: 202, w: 247, h: 141 },
+    label: { x: 438, y: 287 },
+    description: 'Agrupación regional de cooperación centroeuropea.',
+    members: ['PL','CZ','HU','SK']
+  },
+  baltic: {
+    name: 'Asamblea Báltica',
+    color: '#2f5fa8',
+    rect: { x: 227, y: 364, w: 243, h: 101 },
+    label: { x: 229, y: 455 },
+    description: 'Cooperación entre Estonia, Letonia y Lituania.',
+    members: ['EE','LV','LT']
+  },
+  benelux: {
+    name: 'Benelux',
+    color: '#a67a22',
+    rect: { x: 228, y: 489, w: 244, h: 104 },
+    label: { x: 293, y: 583 },
+    description: 'Unión de cooperación entre Bélgica, Países Bajos y Luxemburgo.',
+    members: ['BE','NL','LU']
+  },
+  eu_customs: {
+    name: 'Unión aduanera de la UE',
+    color: '#ff5a00',
+    rect: { x: 168, y: 116, w: 707, h: 761 },
+    label: { x: 184, y: 846 },
+    description: 'Marco aduanero común representado en el gráfico.',
+    members: ['SE','DK','FI','PL','CZ','HU','SK','EE','LV','LT','BE','NL','LU','IT','AT','FR','DE','SI','ES','PT','MT','CY','GR','BG','RO','IE','HR','TR','MC','AD','SM']
+  },
+  monetary: {
+    name: 'Acuerdo monetario con la UE',
+    color: '#46b63e',
+    rect: { x: 610, y: 794, w: 658, h: 74 },
+    label: { x: 885, y: 827 },
+    description: 'Microestados con acuerdo monetario con la UE en el gráfico.',
+    members: ['MC','AD','SM','VA']
+  },
+  bsec: {
+    name: 'BSEC',
+    color: '#7f4b22',
+    rect: { x: 680, y: 105, w: 506, h: 271 },
+    label: { x: 686, y: 145 },
+    description: 'Cooperación Económica del Mar Negro.',
+    members: ['TR','BG','RO','GR','GE','UA','AZ','MD','RU','AM','AL','RS']
+  },
+  guam: {
+    name: 'GUAM',
+    color: '#2a9fb1',
+    rect: { x: 885, y: 116, w: 174, h: 231 },
+    label: { x: 922, y: 336 },
+    description: 'Georgia, Ucrania, Azerbaiyán y Moldavia.',
+    members: ['GE','UA','AZ','MD']
+  },
+  cefta: {
+    name: 'CEFTA',
+    color: '#3156e7',
+    rect: { x: 896, y: 245, w: 372, h: 200 },
+    label: { x: 1162, y: 428 },
+    description: 'Acuerdo Centroeuropeo de Libre Comercio.',
+    members: ['MD','RS','AL','BA','MK','ME','XK']
+  },
+  union: {
+    name: 'Estado de la Unión',
+    color: '#c32575',
+    rect: { x: 1060, y: 43, w: 187, h: 135 },
+    label: { x: 1100, y: 72 },
+    description: 'Proyecto de integración entre Rusia y Bielorrusia.',
+    members: ['RU','BY']
+  },
+  cta: {
+    name: 'Common Travel Area',
+    color: '#b81e5b',
+    rect: { x: 510, y: 618, w: 527, h: 68 },
+    label: { x: 642, y: 658 },
+    description: 'Área de viaje común entre Irlanda y el Reino Unido.',
+    members: ['IE','GB']
+  }
+};
+
+    const svg = document.getElementById('viz');
+    const agreementSelect = document.getElementById('agreementSelect');
+    const countrySearch = document.getElementById('countrySearch');
+    const selectionName = document.getElementById('selectionName');
+    const visibleCount = document.getElementById('visibleCount');
+    const memberTitle = document.getElementById('memberTitle');
+    const memberList = document.getElementById('memberList');
+    const tooltip = document.getElementById('tooltip');
+    const resetBtn = document.getElementById('resetBtn');
+    const focusBtn = document.getElementById('focusBtn');
+
+    let selectedAgreement = 'ALL';
+    let selectedCountry = null;
+    let focusMode = true;
+    const areaEls = {};
+    const countryEls = {};
+
+    function populateSelect() {
+      agreementOrder.forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = agreements[id].name;
+        agreementSelect.appendChild(opt);
+      });
+    }
+
+    function createSVG() {
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bg.setAttribute('x', 0);
+      bg.setAttribute('y', 0);
+      bg.setAttribute('width', 1280);
+      bg.setAttribute('height', 906);
+      bg.setAttribute('fill', '#ffffff');
+      svg.appendChild(bg);
+
+      const areaLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      areaLayer.setAttribute('id', 'areaLayer');
+      svg.appendChild(areaLayer);
+
+      agreementOrder.filter(id => id !== 'ALL').forEach(id => {
+        const a = agreements[id];
+        if (!a.rect) return;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'area-box');
+        g.dataset.id = id;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', a.rect.x);
+        rect.setAttribute('y', a.rect.y);
+        rect.setAttribute('width', a.rect.w);
+        rect.setAttribute('height', a.rect.h);
+        rect.setAttribute('rx', 18);
+        rect.setAttribute('fill', a.color + '55');
+        rect.setAttribute('stroke', a.color);
+        rect.setAttribute('stroke-width', 3);
+        g.appendChild(rect);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', a.label.x);
+        text.setAttribute('y', a.label.y);
+        text.setAttribute('class', 'area-label');
+        if (id === 'union') text.setAttribute('font-size', '11');
+        const lines = wrapLabel(a.name, 20);
+        lines.forEach((line, idx) => {
+          const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+          tspan.setAttribute('x', a.label.x);
+          tspan.setAttribute('dy', idx === 0 ? 0 : 15);
+          tspan.textContent = line;
+          text.appendChild(tspan);
+        });
+        g.appendChild(text);
+
+        g.addEventListener('click', () => {
+          selectedCountry = null;
+          selectedAgreement = id;
+          agreementSelect.value = id;
+          render();
+        });
+        g.addEventListener('mouseenter', e => showTooltip(e, `<strong>${a.name}</strong><br>${a.description}`));
+        g.addEventListener('mousemove', e => moveTooltip(e));
+        g.addEventListener('mouseleave', hideTooltip);
+
+        areaEls[id] = g;
+        areaLayer.appendChild(g);
+      });
+
+      const countryLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      countryLayer.setAttribute('id', 'countryLayer');
+      svg.appendChild(countryLayer);
+
+      Object.entries(countries).forEach(([code, country]) => {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'country');
+        g.dataset.code = code;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('class', 'country-card');
+        rect.setAttribute('x', country.x - 22);
+        rect.setAttribute('y', country.y - 14);
+        rect.setAttribute('width', 44);
+        rect.setAttribute('height', 38);
+        rect.setAttribute('rx', 12);
+        g.appendChild(rect);
+
+        const flag = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        flag.setAttribute('x', country.x);
+        flag.setAttribute('y', country.y - 1);
+        flag.setAttribute('class', 'flag-text');
+        flag.textContent = country.flag;
+        g.appendChild(flag);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', country.x);
+        label.setAttribute('y', country.y + 18);
+        label.setAttribute('class', 'country-code');
+        label.textContent = code;
+        g.appendChild(label);
+
+        g.addEventListener('click', () => {
+          selectedCountry = code;
+          renderCountryInfo(code);
+          highlightCountry(code);
+        });
+        g.addEventListener('mouseenter', e => {
+          const belongs = Object.entries(agreements)
+            .filter(([id, a]) => id !== 'ALL' && a.members.includes(code))
+            .map(([, a]) => a.name)
+            .join(', ');
+          showTooltip(e, `<strong>${country.name}</strong><br>${country.flag} ${code}<br><span style="opacity:.8">Pertenece a: ${belongs || '—'}</span>`);
+        });
+        g.addEventListener('mousemove', e => moveTooltip(e));
+        g.addEventListener('mouseleave', hideTooltip);
+
+        countryEls[code] = g;
+        countryLayer.appendChild(g);
+      });
+    }
+
+    function wrapLabel(text, maxChars) {
+      const words = text.split(' ');
+      const lines = [];
+      let current = '';
+      words.forEach(word => {
+        const next = current ? current + ' ' + word : word;
+        if (next.length > maxChars && current) {
+          lines.push(current);
+          current = word;
+        } else {
+          current = next;
+        }
+      });
+      if (current) lines.push(current);
+      return lines.slice(0, 3);
+    }
+
+    function render() {
+      const agreement = agreements[selectedAgreement];
+      const memberSet = new Set(agreement.members);
+      const search = countrySearch.value.trim().toLowerCase();
+
+      agreementOrder.filter(id => id !== 'ALL').forEach(id => {
+        const g = areaEls[id];
+        if (!g) return;
+        const isSelected = id === selectedAgreement;
+        const opacity = selectedAgreement === 'ALL' ? 0.78 : (focusMode ? (isSelected ? 0.95 : 0.12) : (isSelected ? 0.95 : 0.55));
+        g.style.opacity = opacity;
+        const rect = g.querySelector('rect');
+        rect.setAttribute('stroke-width', isSelected ? 4 : 3);
+      });
+
+      let visible = 0;
+      Object.entries(countryEls).forEach(([code, el]) => {
+        const country = countries[code];
+        const searchMatch = !search || country.name.toLowerCase().includes(search) || code.toLowerCase().includes(search);
+        const allowed = selectedAgreement === 'ALL' ? true : memberSet.has(code);
+        const show = allowed && searchMatch;
+        el.style.display = show ? 'block' : 'none';
+        el.classList.toggle('active', selectedCountry === code);
+        if (show) visible++;
+      });
+
+      selectionName.textContent = agreement.name;
+      visibleCount.textContent = visible;
+      memberTitle.textContent = selectedAgreement === 'ALL' ? 'Todos los países' : `Miembros (${agreement.members.length})`;
+      renderMemberList(agreement.members);
+    }
+
+    function renderMemberList(memberCodes) {
+      memberList.innerHTML = '';
+      memberCodes
+        .map(code => ({ code, ...countries[code] }))
+        .filter(Boolean)
+        .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+        .forEach(country => {
+          const item = document.createElement('button');
+          item.className = 'pill';
+          item.type = 'button';
+          item.innerHTML = `<span>${country.flag}</span><span>${country.name}</span>`;
+          item.addEventListener('click', () => {
+            selectedCountry = country.code;
+            highlightCountry(country.code);
+            renderCountryInfo(country.code);
+          });
+          memberList.appendChild(item);
+        });
+    }
+
+    function renderCountryInfo(code) {
+      const country = countries[code];
+      const belongsTo = Object.entries(agreements)
+        .filter(([id, a]) => id !== 'ALL' && a.members.includes(code))
+        .map(([id, a]) => ({ id, name: a.name }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+
+      selectionName.textContent = country.name;
+      visibleCount.textContent = belongsTo.length;
+      memberTitle.textContent = 'Acuerdos del país';
+      memberList.innerHTML = '';
+      belongsTo.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'pill';
+        btn.type = 'button';
+        btn.textContent = item.name;
+        btn.addEventListener('click', () => {
+          selectedCountry = null;
+          selectedAgreement = item.id;
+          agreementSelect.value = item.id;
+          render();
+        });
+        memberList.appendChild(btn);
+      });
+    }
+
+    function highlightCountry(code) {
+      Object.entries(countryEls).forEach(([key, el]) => {
+        el.classList.toggle('active', key === code);
+      });
+    }
+
+    function resetAll() {
+      selectedAgreement = 'ALL';
+      selectedCountry = null;
+      agreementSelect.value = 'ALL';
+      countrySearch.value = '';
+      render();
+    }
+
+    function showTooltip(event, html) {
+      tooltip.innerHTML = html;
+      tooltip.style.opacity = '1';
+      moveTooltip(event);
+    }
+    function moveTooltip(event) {
+      tooltip.style.left = `${event.clientX}px`;
+      tooltip.style.top = `${event.clientY}px`;
+    }
+    function hideTooltip() {
+      tooltip.style.opacity = '0';
+    }
+
+    agreementSelect.addEventListener('change', e => {
+      selectedCountry = null;
+      selectedAgreement = e.target.value;
+      render();
+    });
+
+    countrySearch.addEventListener('input', () => {
+      if (selectedCountry) selectedCountry = null;
+      render();
+    });
+
+    resetBtn.addEventListener('click', resetAll);
+
+    focusBtn.addEventListener('click', () => {
+      focusMode = !focusMode;
+      focusBtn.textContent = focusMode ? 'Resaltar acuerdo' : 'Mostrar más contexto';
+      focusBtn.classList.toggle('primary', focusMode);
+      render();
+    });
+
+    populateSelect();
+    createSVG();
+    render();
+  </script>
+</body>
+</html>

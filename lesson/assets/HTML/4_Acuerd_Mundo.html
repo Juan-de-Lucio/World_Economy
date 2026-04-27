@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acuerdos por fecha de entrada en vigor</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      background: #ffffff;
+      color: #222;
+    }
+    .container {
+      max-width: 850px;
+      margin: 20px auto;
+      padding: 0 16px;
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    p {
+      margin: 0 0 14px 0;
+      color: #555;
+      font-size: 13px;
+    }
+    #chart {
+      width: 100%;
+      height: 325px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Número de acuerdos por fecha de entrada en vigor</h1>
+    <p>Pasa el cursor por encima de cada barra para ver el año y el número de acuerdos.</p>
+    <div id="chart"></div>
+  </div>
+
+  <script>
+    const years = [1949, 1951, 1952, 1953, 1954, 1956, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1966, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+    const counts = [1, 1, 1, 1, 2, 2, 1, 1, 4, 4, 3, 3, 4, 6, 4, 3, 4, 4, 2, 14, 9, 9, 6, 3, 7, 3, 8, 3, 3, 6, 9, 29, 8, 5, 10, 2, 12, 16, 35, 22, 53, 22, 26, 32, 25, 23, 27, 24, 30, 54, 25, 29, 41, 17, 26, 18, 21, 21, 38, 11, 15, 11, 15, 8, 21, 57, 54, 12, 7, 8, 8];
+
+    const trace = {
+      x: years,
+      y: counts,
+      type: 'bar',
+      hovertemplate: 'Año: %{x}<br>Número de acuerdos: %{y}<extra></extra>'
+    };
+
+    const layout = {
+      margin: { l: 60, r: 10, t: 10, b: 80 },
+      xaxis: {
+        title: 'Año de entrada en vigor',
+        tickangle: -45
+      },
+      yaxis: {
+        title: 'Número de acuerdos'
+      },
+      bargap: 0.15
+    };
+
+    const config = {
+      responsive: true,
+      displaylogo: false
+    };
+
+    Plotly.newPlot('chart', [trace], layout, config);
+  </script>
+</body>
+</html>

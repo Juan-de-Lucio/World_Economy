@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interactive Smile Curves</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --fg:#111111;
+      --muted:#666666;
+      --axis:#111111;
+      --today:#2b2b2b;
+      --historic:#bdbdbd;
+      --box:#d9d9d9;
+      --box-stroke:#8a8a8a;
+      --accent:#1f5fbf;
+    }
+    body{
+      margin:0;
+      font-family: Georgia, "Times New Roman", serif;
+      background:var(--bg);
+      color:var(--fg);
+    }
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:20px 24px 28px;
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    h1{
+      margin:0;
+      font-size:30px;
+      font-weight:700;
+    }
+    .controls{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    button{
+      font:inherit;
+      padding:8px 12px;
+      border:1px solid #bbb;
+      background:#fff;
+      border-radius:8px;
+      cursor:pointer;
+    }
+    button.active{
+      border-color:var(--accent);
+      color:var(--accent);
+      box-shadow:0 0 0 2px rgba(31,95,191,.08);
+    }
+    .hint{
+      color:var(--muted);
+      margin:0 0 10px;
+      font-size:16px;
+    }
+    .chartbox{
+      position:relative;
+      border:1px solid #e5e5e5;
+      border-radius:14px;
+      padding:8px;
+      overflow:hidden;
+    }
+    svg{width:100%;height:auto;display:block;background:#fff;}
+    .axis{stroke:var(--axis);stroke-width:2.2;fill:none;vector-effect:non-scaling-stroke;}
+    .tick{stroke:var(--axis);stroke-width:1.6;vector-effect:non-scaling-stroke;}
+    .curve{fill:none;stroke-width:4;vector-effect:non-scaling-stroke;transition:opacity .18s ease, stroke-width .18s ease;}
+    .curve.today{stroke:var(--today);}
+    .curve.historic{stroke:var(--historic);stroke-width:3;}
+    .curve.dim{opacity:.16;}
+    .curve.focus{stroke-width:5;}
+    .box{fill:var(--box);stroke:var(--box-stroke);stroke-width:1.2;rx:6;ry:6;cursor:pointer;transition:transform .15s ease;}
+    .box:hover{transform:translateY(-1px);}
+    .label{font-size:16px;fill:var(--fg);font-weight:600;pointer-events:none;}
+    .label.italic{font-style:italic;font-weight:500;}
+    .small{font-size:14px;fill:var(--fg);}
+    .muted{fill:var(--muted);}
+    .legendText{font-size:18px;fill:var(--fg);font-weight:600;}
+    .tooltip{
+      position:absolute;
+      min-width:220px;
+      max-width:320px;
+      background:rgba(255,255,255,.98);
+      border:1px solid #d0d0d0;
+      border-radius:10px;
+      box-shadow:0 8px 24px rgba(0,0,0,.12);
+      padding:10px 12px;
+      font-size:15px;
+      line-height:1.35;
+      opacity:0;
+      pointer-events:none;
+      transform:translate(-50%,-108%);
+      transition:opacity .12s ease;
+      z-index:5;
+    }
+    .tooltip strong{display:block;margin-bottom:4px;font-size:16px;}
+    .foot{
+      margin-top:12px;
+      color:var(--muted);
+      font-size:15px;
+    }
+    @media (max-width: 900px){
+      h1{font-size:24px;}
+      .hint{font-size:14px;}
+      .legendText{font-size:16px;}
+      .label{font-size:14px;}
+      .small{font-size:12px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <h1>Smile Curve of Value Chains</h1>
+      <div class="controls">
+        <button id="btnBoth" class="active">Show both</button>
+        <button id="btnToday">Today</button>
+        <button id="btnHistoric">1960–1970</button>
+      </div>
+    </div>
+    <p class="hint">Click the buttons to switch between the two smile curves. Hover over the boxes to see a short explanation of each stage.</p>
+
+    <div class="chartbox" id="chartbox">
+      <div class="tooltip" id="tooltip"></div>
+      <svg viewBox="0 0 1100 820" aria-label="Interactive smile curves diagram">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#111111"></path>
+          </marker>
+        </defs>
+
+        <!-- axes -->
+        <line x1="70" y1="675" x2="1020" y2="675" class="axis" marker-end="url(#arrow)"/>
+        <line x1="85" y1="665" x2="85" y2="40" class="axis" marker-end="url(#arrow)"/>
+
+        <!-- x-axis ticks -->
+        <g>
+          <line x1="140" y1="675" x2="140" y2="686" class="tick"/>
+          <line x1="195" y1="675" x2="195" y2="686" class="tick"/>
+          <line x1="250" y1="675" x2="250" y2="686" class="tick"/>
+          <line x1="305" y1="675" x2="305" y2="686" class="tick"/>
+          <line x1="360" y1="675" x2="360" y2="694" class="tick"/>
+          <line x1="420" y1="675" x2="420" y2="686" class="tick"/>
+          <line x1="480" y1="675" x2="480" y2="686" class="tick"/>
+          <line x1="540" y1="675" x2="540" y2="686" class="tick"/>
+          <line x1="600" y1="675" x2="600" y2="686" class="tick"/>
+          <line x1="650" y1="675" x2="650" y2="694" class="tick"/>
+          <line x1="705" y1="675" x2="705" y2="686" class="tick"/>
+          <line x1="760" y1="675" x2="760" y2="686" class="tick"/>
+          <line x1="815" y1="675" x2="815" y2="686" class="tick"/>
+          <line x1="870" y1="675" x2="870" y2="686" class="tick"/>
+        </g>
+
+        <!-- y-axis title -->
+        <text x="10" y="28" class="legendText">Value added</text>
+
+        <!-- x-axis title -->
+        <text x="790" y="610" class="legendText">Value chain activities /</text>
+        <text x="790" y="638" class="legendText">country location</text>
+
+        <!-- curves -->
+        <path id="curveHistoric" class="curve historic" d="M 180 205 C 270 500, 560 530, 810 215" />
+        <path id="curveToday" class="curve today" d="M 235 92 C 245 560, 420 650, 520 650 C 620 650, 705 560, 718 96" />
+        <!-- side labels -->
+        <text x="700" y="82" class="legendText">Value chains</text>
+        <text x="700" y="110" class="legendText">(today)</text>
+
+        <text x="770" y="170" class="legendText">Value chains</text>
+        <text x="770" y="198" class="legendText">(1960-1970)</text>
+
+        <!-- arrows to curves -->
+        <path d="M 190 235 L 225 185" class="curve historic" style="stroke-dasharray:10 8; stroke-width:2.2; fill:none;"/>
+        <path d="M 785 225 L 730 175" class="curve historic" style="stroke-dasharray:10 8; stroke-width:2.2; fill:none;"/>
+        <path d="M 520 480 L 520 555" class="curve historic" style="stroke-dasharray:10 8; stroke-width:2.2; fill:none;"/>
+
+        <!-- boxes -->
+        <g class="stage" data-title="R&D" data-text="Research and development usually captures high value added because it contains innovation, technology and intellectual property.">
+          <rect class="box" x="220" y="115" width="130" height="48"></rect>
+          <text class="label" x="285" y="145" text-anchor="middle">R&amp;D</text>
+        </g>
+
+        <g class="stage" data-title="Design" data-text="Product and industrial design create differentiation before manufacturing starts.">
+          <rect class="box" x="235" y="245" width="120" height="48"></rect>
+          <text class="label" x="295" y="275" text-anchor="middle">Design</text>
+        </g>
+
+        <g class="stage" data-title="Internal logistics" data-text="Inbound logistics links suppliers, components and production planning.">
+          <rect class="box" x="220" y="470" width="160" height="48"></rect>
+          <text class="label" x="300" y="500" text-anchor="middle">Internal logistics</text>
+        </g>
+
+        <g class="stage" data-title="Manufacturing / standardized services" data-text="Manufacturing and standardized tasks are shown at the bottom of the smile curve because they typically capture lower value added than pre- and post-production intangible activities.">
+          <rect class="box" x="355" y="585" width="280" height="70"></rect>
+          <text class="label" x="495" y="618" text-anchor="middle">Manufacturing</text>
+          <text class="label" x="495" y="646" text-anchor="middle">Standardized services</text>
+        </g>
+
+        <g class="stage" data-title="External logistics" data-text="Outbound logistics distributes the product to markets and customers.">
+          <rect class="box" x="595" y="470" width="160" height="48"></rect>
+          <text class="label" x="675" y="500" text-anchor="middle">External logistics</text>
+        </g>
+
+        <g class="stage" data-title="Marketing" data-text="Marketing, branding and market access tend to capture more value than purely standardized production tasks.">
+          <rect class="box" x="610" y="245" width="130" height="48"></rect>
+          <text class="label italic" x="675" y="275" text-anchor="middle">Marketing</text>
+        </g>
+
+        <g class="stage" data-title="Services" data-text="Advanced services near the consumer side often account for a large share of value added in current global value chains.">
+          <rect class="box" x="600" y="115" width="135" height="48"></rect>
+          <text class="label" x="667" y="145" text-anchor="middle">Services</text>
+        </g>
+
+        <!-- country labels -->
+        <text x="180" y="735" class="small">Country 1… n</text>
+        <text x="455" y="735" class="small">Country 1… n</text>
+        <text x="760" y="735" class="small">Country 1… n</text>
+
+        <!-- bottom braces and group labels -->
+        <path d="M 100 760 L 100 770 L 345 770 L 345 760" class="tick" style="fill:none;"/>
+        <path d="M 375 760 L 375 770 L 625 770 L 625 760" class="tick" style="fill:none;"/>
+        <path d="M 660 760 L 660 770 L 910 770 L 910 760" class="tick" style="fill:none;"/>
+
+        <text x="222" y="815" text-anchor="middle" class="legendText">Concept / pre-production:</text>
+        <text x="222" y="845" text-anchor="middle" class="legendText">intangible activities</text>
+
+        <text x="500" y="815" text-anchor="middle" class="legendText">Manufacturing:</text>
+        <text x="500" y="845" text-anchor="middle" class="legendText">tangible activities</text>
+
+        <text x="785" y="815" text-anchor="middle" class="legendText">Post-production trade:</text>
+        <text x="785" y="845" text-anchor="middle" class="legendText">intangible activities</text>
+      </svg>
+    </div>
+
+    <div class="foot">Interactive file prepared from your reference image, translated into English and with toggle controls for the two smile curves.</div>
+  </div>
+
+  <script>
+    const btnBoth = document.getElementById('btnBoth');
+    const btnToday = document.getElementById('btnToday');
+    const btnHistoric = document.getElementById('btnHistoric');
+    const cToday = document.getElementById('curveToday');
+    const cHistoric = document.getElementById('curveHistoric');
+    const tooltip = document.getElementById('tooltip');
+    const chartbox = document.getElementById('chartbox');
+
+    function setMode(mode){
+      [btnBoth, btnToday, btnHistoric].forEach(b => b.classList.remove('active'));
+      cToday.classList.remove('dim','focus');
+      cHistoric.classList.remove('dim','focus');
+      if(mode === 'both'){
+        btnBoth.classList.add('active');
+      } else if(mode === 'today'){
+        btnToday.classList.add('active');
+        cHistoric.classList.add('dim');
+        cToday.classList.add('focus');
+      } else if(mode === 'historic'){
+        btnHistoric.classList.add('active');
+        cToday.classList.add('dim');
+        cHistoric.classList.add('focus');
+      }
+    }
+
+    btnBoth.addEventListener('click', () => setMode('both'));
+    btnToday.addEventListener('click', () => setMode('today'));
+    btnHistoric.addEventListener('click', () => setMode('historic'));
+
+    document.querySelectorAll('.stage').forEach(el => {
+      const title = el.dataset.title;
+      const text = el.dataset.text;
+      el.addEventListener('mousemove', e => {
+        const box = chartbox.getBoundingClientRect();
+        tooltip.style.left = `${e.clientX - box.left}px`;
+        tooltip.style.top = `${e.clientY - box.top}px`;
+        tooltip.innerHTML = `<strong>${title}</strong>${text}`;
+        tooltip.style.opacity = 1;
+      });
+      el.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+    });
+  </script>
+</body>
+</html>

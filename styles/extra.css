@@ -41,3 +41,35 @@ figure.c figcaption {
 figure + figure {
   margin-top: 0.75rem;
 }
+
+
+.tooltip-term {
+  position: relative;
+  border-bottom: 1px dotted #2563eb;
+  color: #2563eb;
+  cursor: help;
+}
+
+.tooltip-box {
+  visibility: hidden;
+  opacity: 0;
+  width: 260px;
+  background: #111827;
+  color: white;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  position: absolute;
+  z-index: 20;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.5rem;
+  line-height: 1.35;
+  transition: opacity 0.2s ease;
+}
+
+.tooltip-term:hover .tooltip-box {
+  visibility: visible;
+  opacity: 1;
+}
